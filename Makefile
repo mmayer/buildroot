@@ -495,7 +495,11 @@ ifneq ($(PACKAGE_OVERRIDE_FILE),)
 -include $(PACKAGE_OVERRIDE_FILE)
 endif
 
-include $(sort $(wildcard package/*/*.mk))
+# We need to insure that linux-tools.mk is included after all linux-tool-*.mk
+# makefiles, and we can't rely on alphabetical sort order for this.
+LINUX_TOOLS_MK = package/linux-tools/linux-tools.mk
+include $(sort $(filter-out $(LINUX_TOOLS_MK),$(wildcard package/*/*.mk)))
+include $(LINUX_TOOLS_MK)
 
 include boot/common.mk
 include linux/linux.mk

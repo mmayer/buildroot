@@ -14,11 +14,9 @@
 # to guarantee that each tool has a chance to register itself before we build
 # the list of build and install hooks, below.
 #
-# This is currently guaranteed by the naming of each file:
-# - they get included by the top-level Makefile, with $(sort $(wildcard ...))
-# - make's $(sort) function will aways sort in the C locale
-# - the files names correctly sort out in the C locale so that each tool's
-#   .mk file is included before this one.
+# This is ensured by the main buildroot makefile, which explicitly includes
+# linux-tools.mk after all linux-tool*.mk makefiles. Look for LINUX_TOOLS_MK
+# in the top-level makefile to see where this is happening.
 
 # We only need the kernel to be extracted, not actually built
 LINUX_TOOLS_PATCH_DEPENDENCIES = linux
