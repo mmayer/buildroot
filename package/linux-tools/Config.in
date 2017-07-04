@@ -77,4 +77,11 @@ comment "selftests needs BR2_PACKAGE_BUSYBOX_SHOW_OTHERS"
 	depends on BR2_USE_MMU
 	depends on !BR2_PACKAGE_BUSYBOX_SHOW_OTHERS
 
+config BR2_PACKAGE_LINUX_TOOLS_TMON
+	bool "tmon"
+	select BR2_PACKAGE_LINUX_TOOLS
+	help
+	  tmon is a terminal-based tool (using curses) that allows access
+	  thermal information about the system.
+
 endmenu
