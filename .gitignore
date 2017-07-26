@@ -13,3 +13,4 @@
 *.rej
 *~
 *.pyc
+configs/brcmstb_merged_defconfig
