@@ -9,8 +9,10 @@ LINUX_TOOLS += tmon
 TMON_DEPENDENCIES = host-pkgconf ncurses
 TMON_MAKE_OPTS = $(LINUX_MAKE_FLAGS) \
 	CC=$(TARGET_CC) \
-	LDFLAGS="$(TARGET_LDFLAGS)" \
-	PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig
+	LDFLAGS="$(TARGET_LDFLAGS)"
+
+# STB Linux 4.1 and 4.9 use $(PKG_CONFIG) while building tmon.
+TARGET_CONFIGURE_OPTS += PKG_CONFIG="$(HOST_DIR)/bin/pkg-config"
 
 ifeq ($(BR2_TOOLCHAIN_HAS_SSP),)
 define TMON_DISABLE_STACK_PROTECTOR
@@ -25,13 +27,13 @@ define TMON_BUILD_CMDS
 		exit 1 ; \
 	fi
 	$(TMON_DISABLE_STACK_PROTECTOR)
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(LINUX_DIR)/tools \
+	$(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(LINUX_DIR)/tools \
 		$(TMON_MAKE_OPTS) \
 		tmon
 endef
 
 define TMON_INSTALL_TARGET_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(LINUX_DIR)/tools \
+	$(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(LINUX_DIR)/tools \
 		$(TMON_MAKE_OPTS) \
 		INSTALL_ROOT=$(TARGET_DIR) \
 		tmon_install
