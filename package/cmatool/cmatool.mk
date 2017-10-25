@@ -4,9 +4,11 @@
 #
 ################################################################################
 
-CMATOOL_VERSION = buildroot
+BRCMROOT_VERSION = ade027685bb7957ce1c381cc53c0b7e23462c572
+
+CMATOOL_VERSION = master
 CMATOOL_SITE = git://stbgit.broadcom.com/mm940762/uclinux-rootfs.git
-CMATOOL_SOURCE = uclinux-rootfs.tar.gz
+CMATOOL_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
 CMATOOL_LICENSE = GPL-2.0
 CMATOOL_LICENSE_FILES = COPYING
 

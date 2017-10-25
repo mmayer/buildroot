@@ -4,9 +4,11 @@
 #
 ################################################################################
 
-MOCA2_VERSION = buildroot
+BRCMROOT_VERSION = ade027685bb7957ce1c381cc53c0b7e23462c572
+
+MOCA2_VERSION = master
 MOCA2_SITE = git://stbgit.broadcom.com/mm940762/uclinux-rootfs.git
-MOCA2_SOURCE = uclinux-rootfs.tar.gz
+MOCA2_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
 MOCA2_LICENSE = GPL-2.0
 MOCA2_LICENSE_FILES = COPYING
 

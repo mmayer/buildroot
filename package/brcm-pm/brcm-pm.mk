@@ -4,9 +4,11 @@
 #
 ################################################################################
 
-BRCM_PM_VERSION = buildroot
+BRCMROOT_VERSION = ade027685bb7957ce1c381cc53c0b7e23462c572
+
+BRCM_PM_VERSION = master
 BRCM_PM_SITE = git://stbgit.broadcom.com/mm940762/uclinux-rootfs.git
-BRCM_PM_SOURCE = uclinux-rootfs.tar.gz
+BRCM_PM_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
 BRCM_PM_DIR = uclinux-rootfs
 BRCM_PM_LICENSE = GPL-2.0
 BRCM_PM_LICENSE_FILES = COPYING
