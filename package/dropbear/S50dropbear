@@ -7,7 +7,7 @@
 test -r /etc/default/dropbear && . /etc/default/dropbear
 
 start() {
-	DROPBEAR_ARGS="$DROPBEAR_ARGS -R"
+	msg=' '
 
 	# If /etc/dropbear is a symlink to /var/run/dropbear, and
 	#   - the filesystem is RO (i.e. we can not rm the symlink),
@@ -26,7 +26,14 @@ start() {
 		fi
 	fi
 
-	printf "Starting dropbear sshd: "
+	key_files=`ls /etc/dropbear/*host_key 2>/dev/null`
+	# No key files found. We need to generate a key.
+	if [ $? != 0 ]; then
+		DROPBEAR_ARGS="$DROPBEAR_ARGS -R"
+		msg='(with new key) '
+	fi
+
+	printf "Starting dropbear sshd: $msg"
 	umask 077
 
 	start-stop-daemon -S -q -p /var/run/dropbear.pid \
