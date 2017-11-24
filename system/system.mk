@@ -55,6 +55,14 @@ define SYSTEM_RSYNC
 		$(1)/ $(2)/
 endef
 
+ifeq ($(BR2_ROOTFS_RUNTIME32),y)
+
+define SYSTEM_LIB_SYMLINK
+	@echo "SYSTEM_LIB_SYMLINK: nothing to do"
+endef
+
+else
+
 # Make a symlink lib32->lib or lib64->lib as appropriate.
 # MIPS64/n32 requires lib32 even though it's a 64-bit arch.
 # $(1): base dir (either staging or target)
@@ -68,7 +76,8 @@ define SYSTEM_LIB_SYMLINK
 	ln -snf lib $(1)/lib32
 	ln -snf lib $(1)/usr/lib32
 endef
-endif
+endif # BR2_ARCH_IS_64
+endif # BR2_ROOTFS_RUNTIME32
 
 SYSTEM_GETTY_PORT = $(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT))
 SYSTEM_GETTY_BAUDRATE = $(call qstrip,$(BR2_TARGET_GENERIC_GETTY_BAUDRATE))
