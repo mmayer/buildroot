@@ -29,16 +29,19 @@ use constant LOCAL_MK => qw(local.mk);
 
 my %arch_config = (
 	'arm64' => {
+		'arch_name' => 'aarch64',
 		'BR2_aarch64' => 'y',
 		'BR2_cortex_a53' => 'y',
 		'BR2_LINUX_KERNEL_DEFCONFIG' => 'brcmstb',
 	},
 	'arm' => {
+		'arch_name' => 'arm',
 		'BR2_arm' => 'y',
 		'BR2_cortex_a15' => 'y',
 		'BR2_LINUX_KERNEL_DEFCONFIG' => 'brcmstb',
 	},
 	'mips' => {
+		'arch_name' => 'mips',
 		'BR2_mipsel' => 'y',
 		'BR2_MIPS_SOFT_FLOAT' => '',
 		'BR2_MIPS_FP32_MODE_32' => 'y',
@@ -231,6 +234,9 @@ sub write_config($$$)
 	foreach my $key (keys(%$config)) {
 		my $val = $config->{$key};
 
+		# Only write keys that start with BR2_ to config file.
+		next if ($key !~ /^BR2_/);
+
 		if ($val eq '') {
 			print(F "# $key is not set\n");
 			next;
@@ -251,6 +257,7 @@ sub print_usage($)
 	my ($prg) = @_;
 
 	print(STDERR "usage: $prg [argument(s)] arm|arm64|mips\n".
+		"          -3 <path>....path to 32-bit run-time\n".
 		"          -b...........launch build after configuring\n".
 		"          -c...........clean (remove output/\$platform)\n".
 		"          -D...........use platform's default kernel config\n".
@@ -272,6 +279,7 @@ my $prg = basename($0);
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
+my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $local_linux;
@@ -279,7 +287,7 @@ my $toolchain;
 my $arch;
 my %opts;
 
-getopts('bcDd:f:j:L:l:o:t:v:', \%opts);
+getopts('3:bcDd:f:j:L:l:o:t:v:', \%opts);
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -305,6 +313,8 @@ if (defined($opts{'L'}) && defined($opts{'l'})) {
 
 # Treat bmips as an alias for mips.
 $arch = 'mips' if ($arch eq 'bmips');
+# Are we building for a 64-bit platform?
+$is_64bit = ($arch =~ /64/);
 
 # Set local Linux directory from environment, if configured.
 if (defined($ENV{'BR_LINUX_OVERRIDE'})) {
@@ -423,13 +433,56 @@ if (defined($opts{'l'})) {
 }
 
 if (defined($opts{'t'})) {
-	print("Using ".$opts{'t'}." as toolchain...\n");
-	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $opts{'t'};
+	$toolchain = $opts{'t'};
+	print("Using $toolchain as toolchain...\n");
+	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 }
 
 if (defined($opts{'v'})) {
 	print("Using ".$opts{'v'}." as Linux kernel version...\n");
 	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
+}
+
+if ($is_64bit) {
+	my $rt_path;
+	my $runtime_base = $toolchain;
+
+	$runtime_base =~ s|/bin$||;
+
+	if (defined($opts{'3'})) {
+		$rt_path = $opts{'3'};
+	} else {
+		my $arch32 = $arch;
+
+		$arch32 =~ s|64||;
+		# "sysroot" and "sys-root" are being used as directory names
+		$rt_path = `ls -d "$runtime_base/$arch32"*/sys*root 2>/dev/null`;
+		chomp($rt_path);
+	}
+
+	if ($rt_path eq '') {
+		print("32-bit libraries not found, disabling 32-bit ".
+			"support...\n".
+			"Use command line option -3 <path> to specify your ".
+			"32-bit sysroot.\n");
+	} else {
+		my $arch64 = $arch_config{$arch}{'arch_name'};
+		my $rt64_path =
+			`ls -d "$runtime_base/$arch64"*/sys*root 2>/dev/null`;
+		chomp($rt64_path);
+
+		# If "lib64" in the sys-root is a sym-link, we can't build a
+		# 64-bit rootfs with 32-bit support. (There's nowhere to put
+		# 32-bit libraries.)
+		if (-l "$rt64_path/lib64") {
+			print("Aarch64 toolchain is not multi-lib enabled. ".
+				"Disabling 32-bit support.\n");
+		} else {
+			print("Using $rt_path for 32-bit environment\n");
+			$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32'} = 'y';
+			$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32_PATH'} = $rt_path;
+		}
+	}
 }
 
 write_config($arch_config{$arch}, $temp_config, 1);
