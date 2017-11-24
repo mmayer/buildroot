@@ -448,6 +448,7 @@ define TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS
 	$(call copy_toolchain_sysroot,$${SYSROOT_DIR},$${ARCH_SYSROOT_DIR},$${ARCH_SUBDIR},$${ARCH_LIB_DIR},$${SUPPORT_LIB_DIR})
 endef
 
+ifeq ($(BR2_ROOTFS_RUNTIME32),)
 # Create a symlink from (usr/)$(ARCH_LIB_DIR) to lib.
 # Note: the skeleton package additionally creates lib32->lib or lib64->lib
 # (as appropriate)
@@ -461,6 +462,11 @@ create_lib_symlinks = \
 		ln -snf $${relpath}lib "$${DESTDIR}/$${ARCH_LIB_DIR}" ; \
 		ln -snf $${relpath}lib "$${DESTDIR}/usr/$${ARCH_LIB_DIR}" ; \
 	fi
+
+else
+create_lib_symlinks = \
+	@echo "BR2_ROOTFS_RUNTIME32 is set, skipping lib symlinks creation"
+endif
 
 define TOOLCHAIN_EXTERNAL_CREATE_STAGING_LIB_SYMLINK
 	$(call create_lib_symlinks,$(STAGING_DIR))
