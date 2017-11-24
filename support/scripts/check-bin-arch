@@ -58,6 +58,21 @@ while read f; do
 		continue
 	fi
 
+	# Didn't find a straight match. See if we are on a 64-bit architecture
+	# and our binary is a 32-bit binary of the same architecture.
+	if [[ "${arch_name}" =~ 64$ ]]; then
+		if [[ ${arch_name} = "AArch64" ]]; then
+			arch32='ARM'
+		else
+			arch32=${arch_name/64/32}
+		fi
+
+		if [ "${arch}" = "${arch32}" ]; then
+			echo "Accepting ${arch32} binary on ${arch_name} ($f)"
+			continue
+		fi
+	fi
+
 	printf 'ERROR: architecture for "%s" is "%s", should be "%s"\n' \
 	       "${f}" "${arch}" "${arch_name}"
 
