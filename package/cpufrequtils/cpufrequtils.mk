@@ -26,7 +26,8 @@ define CPUFREQUTILS_BUILD_CMDS
 endef
 
 define CPUFREQUTILS_INSTALL_TARGET_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) install DESTDIR=$(TARGET_DIR)
+	$(TARGET_MAKE_ENV) libdir=/usr/$(BR2_ROOTFS_LIB_DIR) \
+		$(MAKE) -C $(@D) install DESTDIR=$(TARGET_DIR)
 endef
 
 $(eval $(generic-package))

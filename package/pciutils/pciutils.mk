@@ -67,12 +67,14 @@ endef
 define PCIUTILS_INSTALL_TARGET_CMDS
 	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) $(PCIUTILS_MAKE_OPTS) \
 		PREFIX=$(TARGET_DIR)/usr SBINDIR=$(TARGET_DIR)/usr/bin \
+		LIBDIR=$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB_DIR) \
 		install install-lib install-pcilib
 endef
 
 define PCIUTILS_INSTALL_STAGING_CMDS
 	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) $(PCIUTILS_MAKE_OPTS) \
 		PREFIX=$(STAGING_DIR)/usr SBINDIR=$(STAGING_DIR)/usr/bin \
+		LIBDIR=$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB_DIR) \
 		install install-lib install-pcilib
 endef
 

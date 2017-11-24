@@ -65,6 +65,8 @@ ifeq ($(BR2_nios2),y)
 E2FSPROGS_CONF_ENV += ac_cv_func_fallocate=no
 endif
 
+E2FSPROGS_CONF_ENV += PKG_CONFIG_PATH="$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)/pkgconfig"
+
 # Some programs are built for the host, but use definitions guessed by
 # the configure script (i.e with the cross-compiler). Help them by
 # saying that <sys/stat.h> is available on the host, which is needed
