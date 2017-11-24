@@ -50,15 +50,16 @@ DMALLOC_POST_PATCH_HOOKS += DMALLOC_POST_PATCH
 define DMALLOC_INSTALL_STAGING_CMDS
 	$(TARGET_MAKE_ENV) $(MAKE) includedir="$(STAGING_DIR)/usr/include" \
 		bindir="$(STAGING_DIR)/usr/bin" \
-		libdir="$(STAGING_DIR)/usr/lib" \
-		shlibdir="$(STAGING_DIR)/usr/lib" \
+		libdir="$(STAGING_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)" \
+		shlibdir="$(STAGING_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)" \
 		infodir="$(STAGING_DIR)/usr/share/info/" \
 		-C $(@D) install
 endef
 
 ifeq ($(BR2_STATIC_LIBS),)
 define DMALLOC_INSTALL_SHARED_LIB
-	cp -dpf $(STAGING_DIR)/usr/lib/libdmalloc*.so $(TARGET_DIR)/usr/lib
+	cp -dpf $(STAGING_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)/libdmalloc*.so \
+		$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)
 endef
 endif
 
