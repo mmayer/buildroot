@@ -33,6 +33,7 @@ define LIBZLIB_CONFIGURE_CMDS
 		./configure \
 		$(LIBZLIB_SHARED) \
 		--prefix=/usr \
+		--libdir='$${exec_prefix}/$(BR2_ROOTFS_LIB_DIR)' \
 	)
 endef
 
@@ -67,7 +68,7 @@ endef
 # assembling the filesystem images anyway.
 ifeq ($(BR2_SHARED_LIBS),y)
 define LIBZLIB_RM_STATIC_STAGING
-	rm -f $(STAGING_DIR)/usr/lib/libz.a
+	rm -f $(STAGING_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)/libz.a
 endef
 LIBZLIB_POST_INSTALL_STAGING_HOOKS += LIBZLIB_RM_STATIC_STAGING
 endif
