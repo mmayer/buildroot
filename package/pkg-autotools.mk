@@ -189,6 +189,7 @@ define $(2)_CONFIGURE_CMDS
 		--build=$$(GNU_HOST_NAME) \
 		--prefix=/usr \
 		--exec-prefix=/usr \
+		--libdir='$$$${exec_prefix}/$(BR2_ROOTFS_LIB_DIR)' \
 		--sysconfdir=/etc \
 		--localstatedir=/var \
 		--program-prefix="" \
