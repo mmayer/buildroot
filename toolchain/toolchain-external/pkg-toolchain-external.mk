@@ -445,7 +445,12 @@ define TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS
 		ARCH_SUBDIR=`echo $${ARCH_SYSROOT_DIR} | sed -r -e "s:^$${SYSROOT_DIR}(.*)/$$:\1:"` ; \
 	fi ; \
 	$(call MESSAGE,"Copying external toolchain sysroot to staging...") ; \
-	$(call copy_toolchain_sysroot,$${SYSROOT_DIR},$${ARCH_SYSROOT_DIR},$${ARCH_SUBDIR},$${ARCH_LIB_DIR},$${SUPPORT_LIB_DIR})
+	$(call copy_toolchain_sysroot,$${SYSROOT_DIR},$${ARCH_SYSROOT_DIR},$${ARCH_SUBDIR},$${ARCH_LIB_DIR},$${SUPPORT_LIB_DIR}); \
+	if [ "$(BR2_ROOTFS_RUNTIME32)" = "y" ]; then \
+		$(call MESSAGE,"Copying external toolchain 32-bit libraries to staging...") ; \
+		mkdir -p "$${STAGING_DIR}/$(BR2_ROOTFS_LIB32_DIR)"; \
+		rsync -a --exclude '*.a' "$(BR2_ROOTFS_RUNTIME32_PATH)/$(BR2_ROOTFS_LIB32_DIR)" "$${STAGING_DIR}"; \
+	fi
 endef
 
 ifeq ($(BR2_ROOTFS_RUNTIME32),)
