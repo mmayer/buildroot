@@ -7,6 +7,7 @@
 # $1 - Kernel src directory
 # $2 - Output directory
 
+arch=`basename "$2"`
 
 test ! -r $2/Makefile -o -O $2/Makefile || exit 0
 # Only overwrite automatically generated Makefiles
@@ -35,12 +36,26 @@ MAKEARGS += O=\$(if \$(patsubst /%,,\$(makedir)),\$(CURDIR)/)\$(patsubst %/,%,\$
 
 MAKEFLAGS += --no-print-directory
 
-.PHONY: _all \$(MAKECMDGOALS)
+makegoals0 := \$(filter-out images,\$(MAKECMDGOALS))
+makegoals1 := \$(filter-out install,\$(makegoals0))
+all := \$(filter-out Makefile,\$(makegoals1))
 
-all	:= \$(filter-out Makefile,\$(MAKECMDGOALS))
+.PHONY: _all \$(makegoals1) images install
 
 _all:
+	test -d images || mkdir images
+	test -r images/rootfs.cpio || touch images/rootfs.cpio
 	\$(Q)umask 0022 && \$(MAKE) \$(MAKEARGS) \$(all)
+
+images: _all
+	$1/bin/build_rootfs_images.sh ${arch}
+
+install: _all
+	test -d \$(DESTDIR) || mkdir -p \$(DESTDIR)
+	cp -a images/* \$(DESTDIR)
+	@echo ""
+	@echo "Images have been copied to \$(DESTDIR)"
+	@echo ""
 
 Makefile:;
 
