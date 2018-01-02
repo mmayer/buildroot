@@ -263,6 +263,7 @@ sub print_usage($)
 		"          -D...........use platform's default kernel config\n".
 		"          -d <fname>...use <fname> as kernel defconfig\n".
 		"          -f <fname>...use <fname> as BR fragment file\n".
+		"          -i...........like -b, but also build FS images\n".
 		"          -j <jobs>....run <jobs> parallel build jobs\n".
 		"          -L <path>....use local <path> as Linux kernel\n".
 		"          -l <url>.....use <url> as the Linux kernel repo\n".
@@ -287,7 +288,7 @@ my $toolchain;
 my $arch;
 my %opts;
 
-getopts('3:bcDd:f:j:L:l:o:t:v:', \%opts);
+getopts('3:bcDd:f:ij:L:l:o:t:v:', \%opts);
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -503,7 +504,12 @@ move_merged_config($prg, $arch, ".config", "configs/$merged_config");
 system("make O=\"$br_outputdir\" \"$merged_config\"");
 
 print("Buildroot has been configured for ".uc($arch).".\n");
-if (defined($opts{'b'})) {
+if (defined($opts{'i'})) {
+	print("Launching build, including file system images...\n");
+	# The "images" target only exists in the generated Makefile in
+	# $br_outputdir, so using "make O=..." does not work here.
+	system("make -C \"$br_outputdir\" images");
+} elsif (defined($opts{'b'})) {
 	print("Launching build...\n");
 	system("make O=\"$br_outputdir\"");
 } else {
