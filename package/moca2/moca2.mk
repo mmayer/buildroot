@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-BRCMROOT_VERSION = ade027685bb7957ce1c381cc53c0b7e23462c572
+BRCMROOT_VERSION = e301a2d729cbc11f7052fdbf2b4d3297950eb16c
 
 MOCA2_VERSION = master
 MOCA2_SITE = git://stbgit.broadcom.com/mm940762/uclinux-rootfs.git
