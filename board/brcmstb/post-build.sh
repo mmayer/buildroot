@@ -21,6 +21,11 @@ else
 		--wildcards --strip-components=2 '*/skel'
 fi
 
+if [ ! -e ${TARGET_DIR}/bin/sh ]; then
+	echo "Symlinking /bin/bash -> /bin/sh..."
+	ln -s bash ${TARGET_DIR}/bin/sh
+fi
+
 # Auto-login on serial console
 if [ -e ${TARGET_DIR}/etc/inittab ]; then
 	echo "Enabling auto-login on serial console..."
