@@ -26,6 +26,7 @@ use POSIX;
 
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
+use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 
 my %arch_config = (
 	'arm64' => {
@@ -86,6 +87,11 @@ sub check_br()
 	return -1;
 }
 
+# Check if the shared open source directory exists
+sub check_open_source_dir()
+{
+	return  (-d SHARED_OSS_DIR) ? 1 : 0;
+}
 
 # Check for some obvious build artifacts that show us the local Linux source
 # tree is not clean.
@@ -310,6 +316,19 @@ if (!defined($arch_config{$arch})) {
 if (defined($opts{'L'}) && defined($opts{'l'})) {
 	print(STDERR "$prg: options -L and -l cannot be specified together\n");
 	exit(1);
+}
+
+if (check_open_source_dir()) {
+	my $br_oss_cache = SHARED_OSS_DIR.'/buildroot';
+
+	if (! -d $br_oss_cache) {
+		print("Creating shared open source directory $br_oss_cache...\n");
+		mkdir($br_oss_cache);
+		chmod(0777, $br_oss_cache);
+	}
+
+	print("Using $br_oss_cache as download cache...\n");
+	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
 }
 
 # Treat bmips as an alias for mips.
