@@ -513,7 +513,10 @@ system("support/kconfig/merge_config.sh -m configs/brcmstb_defconfig ".
 	"\"$temp_config\"");
 if (defined($opts{'f'})) {
 	my $fragment_file = $opts{'f'};
-	system("support/kconfig/merge_config.sh -m configs/brcmstb_defconfig ".
+	# Preserve the merged configuration from above and use it as the
+	# starting point.
+	rename('.config', $temp_config);
+	system("support/kconfig/merge_config.sh -m $temp_config ".
 		"\"$fragment_file\"");
 }
 unlink($temp_config);
