@@ -43,3 +43,11 @@ if ls board/brcmstb/dropbear_*_host_key >/dev/null 2>&1; then
 		install -D -p -m 0600 -t ${TARGET_DIR}/etc/dropbear ${key}
 	done
 fi
+
+# Create mount points
+echo "Creating mount points..."
+rm -r ${TARGET_DIR}/mnt
+mkdir ${TARGET_DIR}/mnt
+for d in flash hd nfs usb; do
+	mkdir ${TARGET_DIR}/mnt/${d}
+done
