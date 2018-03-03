@@ -51,3 +51,16 @@ mkdir ${TARGET_DIR}/mnt
 for d in flash hd nfs usb; do
 	mkdir ${TARGET_DIR}/mnt/${d}
 done
+
+# Generate brcmstb.conf
+echo "Generating /etc/brcmstb.conf..."
+arch=`basename ${BASE_DIR}`
+# The Linux directory can be "linux-custom" or "linux-$tag"
+linux_dir=`ls -drt ${BUILD_DIR}/linux-* | grep -v linux-tools | head -1`
+linux_ver=`./bin/linuxver.sh $linux_dir`
+cat >${TARGET_DIR}/etc/brcmstb.conf <<EOF
+TFTPHOST=`hostname -f`
+TFTPPATH=$linux_ver
+PLAT=$arch
+VERSION=$linux_ver
+EOF
