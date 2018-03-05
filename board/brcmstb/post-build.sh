@@ -26,6 +26,11 @@ if [ ! -e ${TARGET_DIR}/bin/sh ]; then
 	ln -s bash ${TARGET_DIR}/bin/sh
 fi
 
+if ! grep /bin/sh ${TARGET_DIR}/etc/shells >/dev/null; then
+	echo "Adding /bin/sh to /etc/shells..."
+	echo "/bin/sh" >>${TARGET_DIR}/etc/shells
+fi
+
 # Auto-login on serial console
 if [ -e ${TARGET_DIR}/etc/inittab ]; then
 	echo "Enabling auto-login on serial console..."
