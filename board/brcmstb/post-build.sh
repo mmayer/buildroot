@@ -49,6 +49,13 @@ if ls board/brcmstb/dropbear_*_host_key >/dev/null 2>&1; then
 	done
 fi
 
+# Enabling dropbear (rcS file inherited from the classic rootfs for now)
+rcS="${TARGET_DIR}/etc/init.d/rcS"
+if grep 'if [ -e /sbin/dropbear ]' "$rcS" >/dev/null; then
+	echo "Enabling dropbear rcS..."
+	sed -i 's| -e /sbin/dropbear | -e /usr/sbin/dropbear |' ${rcS}
+fi
+
 # Create mount points
 echo "Creating mount points..."
 rm -r ${TARGET_DIR}/mnt
