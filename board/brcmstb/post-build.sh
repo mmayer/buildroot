@@ -56,6 +56,19 @@ if grep 'if [ -e /sbin/dropbear ]' "$rcS" >/dev/null; then
 	sed -i 's| -e /sbin/dropbear | -e /usr/sbin/dropbear |' ${rcS}
 fi
 
+# Add SSH key for root
+sshdir="${TARGET_DIR}/root/.ssh"
+if [ -r board/brcmstb/brcmstb_root ]; then
+	echo "Installing SSH key for root..."
+	rm -rf "${sshdir}"
+	mkdir "${sshdir}"
+	chmod go= "${sshdir}"
+	cp board/brcmstb/brcmstb_root.pub "${sshdir}/authorized_keys"
+	echo "Setting lock password for root..."
+	sed -i 's|^root::|root:*:|' ${TARGET_DIR}/etc/passwd
+	sed -i 's|^root::|root:*:|' ${TARGET_DIR}/etc/shadow
+fi
+
 # Create mount points
 echo "Creating mount points..."
 rm -r ${TARGET_DIR}/mnt
