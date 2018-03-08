@@ -273,6 +273,7 @@ sub print_usage($)
 		"          -j <jobs>....run <jobs> parallel build jobs\n".
 		"          -L <path>....use local <path> as Linux kernel\n".
 		"          -l <url>.....use <url> as the Linux kernel repo\n".
+		"          -n...........do not use shared download cache\n".
 		"          -o <path>....use <path> as the BR output directory\n".
 		"          -t <path>....use <path> as toolchain directory\n".
 		"          -v <tag>.....use <tag> as Linux version tag\n");
@@ -294,7 +295,7 @@ my $toolchain;
 my $arch;
 my %opts;
 
-getopts('3:bcDd:f:ij:L:l:o:t:v:', \%opts);
+getopts('3:bcDd:f:ij:L:l:no:t:v:', \%opts);
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -386,7 +387,7 @@ if (!defined($toolchain) && !defined($opts{'t'})) {
 	exit(1);
 }
 
-if (check_open_source_dir()) {
+if (check_open_source_dir() && !defined($opts{'n'})) {
 	my $br_oss_cache = SHARED_OSS_DIR.'/buildroot';
 
 	if (! -d $br_oss_cache) {
