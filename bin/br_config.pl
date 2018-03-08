@@ -318,19 +318,6 @@ if (defined($opts{'L'}) && defined($opts{'l'})) {
 	exit(1);
 }
 
-if (check_open_source_dir()) {
-	my $br_oss_cache = SHARED_OSS_DIR.'/buildroot';
-
-	if (! -d $br_oss_cache) {
-		print("Creating shared open source directory $br_oss_cache...\n");
-		mkdir($br_oss_cache);
-		chmod(0777, $br_oss_cache);
-	}
-
-	print("Using $br_oss_cache as download cache...\n");
-	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
-}
-
 # Treat bmips as an alias for mips.
 $arch = 'mips' if ($arch eq 'bmips');
 # Are we building for a 64-bit platform?
@@ -397,6 +384,19 @@ if (!defined($toolchain) && !defined($opts{'t'})) {
 	print(STDERR
 		"$prg: couldn't find toolchain in your path, use option -t\n");
 	exit(1);
+}
+
+if (check_open_source_dir()) {
+	my $br_oss_cache = SHARED_OSS_DIR.'/buildroot';
+
+	if (! -d $br_oss_cache) {
+		print("Creating shared open source directory $br_oss_cache...\n");
+		mkdir($br_oss_cache);
+		chmod(0777, $br_oss_cache);
+	}
+
+	print("Using $br_oss_cache as download cache...\n");
+	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
 }
 
 if (defined($opts{'D'})) {
