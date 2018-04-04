@@ -27,6 +27,7 @@ use POSIX;
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
+use constant VERSION_H => qw(/usr/include/linux/version.h);
 
 my %arch_config = (
 	'arm64' => {
@@ -141,6 +142,38 @@ sub find_toolchain()
 		}
 	}
 	return undef;
+}
+
+sub get_kernel_header_version($$)
+{
+	my ($toolchain, $arch) = @_;
+	my ($compiler_arch, $sys_root, $version_path);
+	my $version_code;
+
+	$compiler_arch = $arch_config{$arch}->{'arch_name'};
+	# The MIPS compiler may be called "mipsel-*" not just "mips-*".
+	if (defined($arch_config{$arch}->{'BR2_mipsel'})) {
+		$compiler_arch .= "el";
+	}
+	$sys_root = $toolchain;
+	$sys_root =~ s|/bin$||;
+	$sys_root = `ls -d "$sys_root/$compiler_arch"*/sys*root 2>/dev/null`;
+	chomp($sys_root);
+	$version_path = $sys_root.VERSION_H;
+
+	open(F, $version_path) || return undef;
+	while (<F>) {
+		chomp;
+		if (/LINUX_VERSION_CODE\s+(\d+)/) {
+			$version_code = $1;
+			last;
+		}
+	}
+	close(F);
+
+	return undef if (!defined($version_code));
+
+	return [($version_code >> 16) & 0xff, ($version_code >> 8) & 0xff];
 }
 
 sub move_merged_config($$$$)
@@ -292,6 +325,7 @@ my $relative_outputdir;
 my $br_outputdir;
 my $local_linux;
 my $toolchain;
+my $kernel_header_version;
 my $arch;
 my %opts;
 
@@ -462,6 +496,14 @@ if (defined($opts{'t'})) {
 if (defined($opts{'v'})) {
 	print("Using ".$opts{'v'}." as Linux kernel version...\n");
 	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
+}
+
+$kernel_header_version = get_kernel_header_version($toolchain, $arch);
+if (defined($kernel_header_version)) {
+	my ($major, $minor) = @$kernel_header_version;
+	my $ext_headers = "BR2_TOOLCHAIN_EXTERNAL_HEADERS_${major}_${minor}";
+	print("Found kernel header version ${major}.${minor}...\n");
+	$toolchain_config{$arch}{$ext_headers} = 'y';
 }
 
 if ($is_64bit) {
