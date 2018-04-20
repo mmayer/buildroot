@@ -343,6 +343,11 @@ if (check_br() < 0) {
 	exit(1);
 }
 
+# Treat bmips as an alias for mips.
+$arch = 'mips' if ($arch eq 'bmips');
+# Are we building for a 64-bit platform?
+$is_64bit = ($arch =~ /64/);
+
 if (!defined($arch_config{$arch})) {
 	print(STDERR "$prg: unknown architecture $arch\n");
 	exit(1);
@@ -352,11 +357,6 @@ if (defined($opts{'L'}) && defined($opts{'l'})) {
 	print(STDERR "$prg: options -L and -l cannot be specified together\n");
 	exit(1);
 }
-
-# Treat bmips as an alias for mips.
-$arch = 'mips' if ($arch eq 'bmips');
-# Are we building for a 64-bit platform?
-$is_64bit = ($arch =~ /64/);
 
 # Set local Linux directory from environment, if configured.
 if (defined($ENV{'BR_LINUX_OVERRIDE'})) {
