@@ -48,6 +48,7 @@ my %arch_config = (
 		'BR2_MIPS_SOFT_FLOAT' => '',
 		'BR2_MIPS_FP32_MODE_32' => 'y',
 		'BR2_LINUX_KERNEL_DEFCONFIG' => 'bmips_stb',
+		'BR2_LINUX_KERNEL_VMLINUX' => 'y',
 	},
 );
 
