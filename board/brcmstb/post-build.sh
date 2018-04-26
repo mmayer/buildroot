@@ -19,6 +19,8 @@ else
 	# first (${SKEL_DIR}) and pick what we need from there.
 	tar -C "${TARGET_DIR}" -x -z -f "${UCLINUX_ROOTFS}" \
 		--wildcards --strip-components=2 '*/skel'
+	sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
+		${TARGET_DIR}/etc/config/ifup.default
 fi
 
 if [ ! -e ${TARGET_DIR}/bin/sh ]; then
