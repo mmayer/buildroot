@@ -91,3 +91,11 @@ TFTPPATH=$linux_ver
 PLAT=$arch
 VERSION=$linux_ver
 EOF
+
+# Generate list of GPL-3.0 packages
+echo "Generating GPL-3.0 packages list"
+make -C ${BASE_DIR} legal-info
+rm -rf ${TARGET_DIR}/usr/share/legal-info/
+mkdir ${TARGET_DIR}/usr/share/legal-info/
+grep "GPL-3.0" ${BASE_DIR}/legal-info/manifest.csv  | cut -d, -f1 > ${TARGET_DIR}/usr/share/legal-info/GPL-3.0-packages
+sed -i 's| -e /bin/gdbserver -o -e /bin/gdb | -s /usr/share/legal-info/GPL-3.0-packages |' ${rcS}
