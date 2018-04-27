@@ -157,9 +157,12 @@ sub get_kernel_header_version($$)
 		$compiler_arch .= "el";
 	}
 	$sys_root = $toolchain;
-	$sys_root =~ s|/bin$||;
+	$sys_root =~ s|/bin/?$||;
 	$sys_root = `ls -d "$sys_root/$compiler_arch"*/sys*root 2>/dev/null`;
 	chomp($sys_root);
+	if ($sys_root eq '') {
+		return undef;
+	}
 	$version_path = $sys_root.VERSION_H;
 
 	open(F, $version_path) || return undef;
@@ -505,13 +508,16 @@ if (defined($kernel_header_version)) {
 	my $ext_headers = "BR2_TOOLCHAIN_EXTERNAL_HEADERS_${major}_${minor}";
 	print("Found kernel header version ${major}.${minor}...\n");
 	$toolchain_config{$arch}{$ext_headers} = 'y';
+} else {
+	print("WARNING: couldn't detect kernel header version; build may ".
+		"fail\n");
 }
 
 if ($is_64bit) {
 	my $rt_path;
 	my $runtime_base = $toolchain;
 
-	$runtime_base =~ s|/bin$||;
+	$runtime_base =~ s|/bin/?$||;
 
 	if (defined($opts{'3'})) {
 		$rt_path = $opts{'3'};
