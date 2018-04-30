@@ -42,7 +42,7 @@ my %arch_config = (
 		'BR2_cortex_a15' => 'y',
 		'BR2_LINUX_KERNEL_DEFCONFIG' => 'brcmstb',
 	},
-	'mips' => {
+	'bmips' => {
 		'arch_name' => 'mips',
 		'BR2_mipsel' => 'y',
 		'BR2_MIPS_SOFT_FLOAT' => '',
@@ -61,7 +61,7 @@ my %toolchain_config = (
 	'arm' => {
 #		'BR2_TOOLCHAIN_EXTERNAL_CUSTOM_PREFIX' => '$(ARCH)-linux-gnueabihf'
 	},
-	'mips' => {
+	'bmips' => {
 #		'BR2_TOOLCHAIN_EXTERNAL_CUSTOM_PREFIX' => '$(ARCH)-linux-gnu'
 	},
 );
@@ -299,7 +299,7 @@ sub print_usage($)
 {
 	my ($prg) = @_;
 
-	print(STDERR "usage: $prg [argument(s)] arm|arm64|mips\n".
+	print(STDERR "usage: $prg [argument(s)] arm|arm64|bmips\n".
 		"          -3 <path>....path to 32-bit run-time\n".
 		"          -b...........launch build after configuring\n".
 		"          -c...........clean (remove output/\$platform)\n".
@@ -347,8 +347,8 @@ if (check_br() < 0) {
 	exit(1);
 }
 
-# Treat bmips as an alias for mips.
-$arch = 'mips' if ($arch eq 'bmips');
+# Treat mips as an alias for bmips.
+$arch = 'bmips' if ($arch eq 'mips');
 # Are we building for a 64-bit platform?
 $is_64bit = ($arch =~ /64/);
 
