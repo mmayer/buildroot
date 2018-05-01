@@ -26,8 +26,11 @@ use POSIX;
 
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
+use constant RECOMMENDED_TOOLCHAIN => qw(misc/toolchain);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
+
+use constant SLEEP_TIME => 5;
 
 my %arch_config = (
 	'arm64' => {
@@ -93,6 +96,27 @@ sub check_br()
 sub check_open_source_dir()
 {
 	return  (-d SHARED_OSS_DIR) ? 1 : 0;
+}
+
+
+# Check if the specified toolchain is the recommended one.
+sub check_toolchain($)
+{
+	my ($toolchain) = @_;
+	my $recommended;
+
+	$toolchain =~ s|.*/||;
+	# If we don't know what the recommended toolchain is, we accept the
+	# one that was specified.
+	if (!open(F, RECOMMENDED_TOOLCHAIN)) {
+		return '';
+	}
+
+	$recommended = <F>;
+	chomp($recommended);
+	close(F);
+
+	return ($recommended ne $toolchain) ? $recommended : '';
 }
 
 # Check for some obvious build artifacts that show us the local Linux source
@@ -359,6 +383,7 @@ my $relative_outputdir;
 my $br_outputdir;
 my $local_linux;
 my $toolchain;
+my $recommended_toolchain;
 my $kernel_header_version;
 my $arch;
 my %opts;
@@ -525,7 +550,18 @@ if (defined($opts{'t'})) {
 	$toolchain = $opts{'t'};
 }
 
-print("Using $toolchain as toolchain...\n");
+$recommended_toolchain = check_toolchain($toolchain);
+if ($recommended_toolchain ne '') {
+	my $t = $toolchain;
+
+	$t =~ s|.*/||;
+	print(STDERR "WARNING: you are using toolchain $t. Recommended is ".
+		"$recommended_toolchain.\n");
+	print(STDERR "Hit Ctrl-C now or wait ".SLEEP_TIME." seconds...\n");
+	sleep(SLEEP_TIME);
+} else {
+	print("Using $toolchain as toolchain...\n");
+}
 $toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 
 # The toolchain may have changed since we last configured Buildroot. We need to
