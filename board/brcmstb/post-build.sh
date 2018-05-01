@@ -66,9 +66,6 @@ if [ -r board/brcmstb/brcmstb_root ]; then
 	mkdir "${sshdir}"
 	chmod go= "${sshdir}"
 	cp board/brcmstb/brcmstb_root.pub "${sshdir}/authorized_keys"
-	echo "Setting lock password for root..."
-	sed -i 's|^root::|root:*:|' ${TARGET_DIR}/etc/passwd
-	sed -i 's|^root::|root:*:|' ${TARGET_DIR}/etc/shadow
 fi
 
 # Create mount points
