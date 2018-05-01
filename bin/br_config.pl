@@ -523,9 +523,10 @@ if (defined($opts{'l'})) {
 
 if (defined($opts{'t'})) {
 	$toolchain = $opts{'t'};
-	print("Using $toolchain as toolchain...\n");
-	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 }
+
+print("Using $toolchain as toolchain...\n");
+$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 
 # The toolchain may have changed since we last configured Buildroot. We need to
 # force it to create the symlinks again, so we are sure to use the toolchain
