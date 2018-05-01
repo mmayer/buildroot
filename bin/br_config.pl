@@ -146,6 +146,36 @@ sub find_toolchain()
 	return undef;
 }
 
+sub trigger_toolchain_sync($$)
+{
+	my ($output_dir, $arch) = @_;
+	my $path;
+	my @files;
+
+	# First, we delete all toolchain symlinks
+	$path = "$output_dir/host/bin";
+	if (!opendir(D, $path)) {
+		return;
+	}
+	@files = grep { /^$arch/ } readdir(D);
+	closedir(D);
+	foreach my $f (@files) {
+		unlink("$path/$f") if (-l "$path/$f");
+	}
+
+	# Secondly, we delete the stamp files, so BR knows to re-sync the
+	# toolchain.
+	$path = "$output_dir/build/toolchain-external-custom";
+	if (!opendir(D, $path)) {
+		return;
+	}
+	@files = grep { /^(\.stamp|.applied)/ } readdir(D);
+	closedir(D);
+	foreach my $f (@files) {
+		unlink("$path/$f");
+	}
+}
+
 sub get_kernel_header_version($$)
 {
 	my ($toolchain, $arch) = @_;
@@ -496,6 +526,11 @@ if (defined($opts{'t'})) {
 	print("Using $toolchain as toolchain...\n");
 	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 }
+
+# The toolchain may have changed since we last configured Buildroot. We need to
+# force it to create the symlinks again, so we are sure to use the toolchain
+# specified now.
+trigger_toolchain_sync($relative_outputdir, $arch);
 
 if (defined($opts{'v'})) {
 	print("Using ".$opts{'v'}." as Linux kernel version...\n");
