@@ -28,6 +28,7 @@ use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
 use constant RECOMMENDED_TOOLCHAIN => qw(misc/toolchain);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
+use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
 
 use constant SLEEP_TIME => 5;
@@ -159,6 +160,7 @@ sub get_cores()
 sub find_toolchain()
 {
 	my @path = split(/:/, $ENV{'PATH'});
+	my $dh;
 
 	foreach my $dir (@path) {
 		# We don't support anything before stbgcc-6.x at this point.
@@ -167,6 +169,23 @@ sub find_toolchain()
 			return $dir;
 		}
 	}
+
+	# If we didn't find a toolchain in the $PATH, we look in the standard
+	# location.
+	if (opendir($dh, TOOLCHAIN_DIR)) {
+		# Sort in reverse order, so newer toolchains appear first.
+		my @toolchains = sort { $b cmp $a }
+			grep { /stbgcc-[6-9]/ } readdir($dh);
+
+		closedir($dh);
+
+		foreach my $dir (@toolchains) {
+			if (-d TOOLCHAIN_DIR."/$dir/bin") {
+				return TOOLCHAIN_DIR."/$dir";
+			}
+		}
+	}
+
 	return undef;
 }
 
