@@ -89,6 +89,12 @@ PLAT=$arch
 VERSION=$linux_ver
 EOF
 
+# Check that shared libraries were installed properly
+if [ -x bin/find_64bit_libs.sh ]; then
+	echo "Checking that shared libraries were installed properly..."
+	bin/find_64bit_libs.sh "${TARGET_DIR}"
+fi
+
 # Generate list of GPL-3.0 packages
 echo "Generating GPL-3.0 packages list"
 make -C ${BASE_DIR} legal-info
