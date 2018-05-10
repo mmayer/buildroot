@@ -26,7 +26,8 @@ use POSIX;
 
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
-use constant RECOMMENDED_TOOLCHAIN => qw(misc/toolchain);
+use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
+					misc/toolchain) );
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
@@ -105,17 +106,25 @@ sub check_toolchain($)
 {
 	my ($toolchain) = @_;
 	my $recommended;
+	my $found = 0;
 
-	$toolchain =~ s|.*/||;
+	foreach my $tc (RECOMMENDED_TOOLCHAINS) {
+		if (open(F, $tc)) {
+			$found = 1;
+			last;
+		}
+	}
 	# If we don't know what the recommended toolchain is, we accept the
 	# one that was specified.
-	if (!open(F, RECOMMENDED_TOOLCHAIN)) {
+	if (!$found) {
 		return '';
 	}
 
 	$recommended = <F>;
 	chomp($recommended);
 	close(F);
+
+	$toolchain =~ s|.*/||;
 
 	return ($recommended ne $toolchain) ? $recommended : '';
 }
