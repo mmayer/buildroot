@@ -25,7 +25,7 @@ test "$arch" = "mips" && arch="bmips"
 
 rootfs_cpio="$image_path/rootfs.cpio"
 rootfs_tar="$image_path/rootfs.tar"
-nfs_tar="$image_path/nfsroot-$arch.tar"
+nfs_tar="nfsroot-$arch.tar"
 
 for s in $LINUX_STAMPS; do
 	stamp="$output_path/build/$linux_dir/$s"
@@ -42,8 +42,12 @@ fi
 
 echo "Creating NFS tar-ball..."
 rm -f "${rootfs_tar}.gz"
-mv "$rootfs_tar" "$nfs_tar"
-bzip2 -f "$nfs_tar"
+mkdir "$image_path/romfs"
+# We need fakeroot, so mknod doesn't complain.
+fakeroot tar -C "$image_path/romfs" -x -f "$rootfs_tar"
+(cd "$image_path"; tar cfj "$nfs_tar.bz2" romfs)
+rm -rf "$image_path/romfs"
+rm -f "${rootfs_tar}"
 
 if [ "$arch" = "bmips" ]; then
 	linux_image="$image_path/vmlinux"
