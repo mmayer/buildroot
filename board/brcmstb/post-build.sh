@@ -10,10 +10,22 @@ SKEL_DIR="${BUILD_DIR}/brcmstb_skel"
 # Use newest rootfs tar-ball if there's more than one
 UCLINUX_ROOTFS=`ls -1t dl/uclinux-rootfs*.tar.gz 2>/dev/null | head -1`
 
+# If the uclinux tar-ball doesn't exist in the local download directory, check
+# if we have a download cache elsewhere.
+if [ ! -r "${UCLINUX_ROOTFS}" ]; then
+	dl_cache=`grep BR2_DL_DIR "${TARGET_DIR}/../.config" | cut -d= -f2 | \
+		sed -e 's/"//g'`
+	if [ "${dl_cache}" != "" ]; then
+		echo "Attempting to find uclinux-rootfs in ${dl_cache}..."
+		UCLINUX_ROOTFS=`ls -1t "${dl_cache}"/uclinux-rootfs*.tar.gz 2>/dev/null | head -1`
+	fi
+fi
+
 # BRCMSTB skeleton
 if [ ! -r "${UCLINUX_ROOTFS}" ]; then
 	echo "$prg: uclinux-rootfs tar-ball not found, not copying skel..." 1>&2
 else
+	echo "Extracting skel from ${UCLINUX_ROOTFS}..."
 	# Extract old "skel" directory straight into our new rootfs. If we ever
 	# need to be more selective, we'll extract it into a temporary location
 	# first (${SKEL_DIR}) and pick what we need from there.
