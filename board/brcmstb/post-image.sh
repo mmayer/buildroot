@@ -35,6 +35,12 @@ for s in $LINUX_STAMPS; do
 	fi
 done
 
+echo "Removing CONFIG_BLK_DEV_INITRD from kernel config..."
+tmp="$output_path/build/$$"
+kern_config="$output_path/build/$linux_dir/.config"
+fgrep -v "CONFIG_BLK_DEV_INITRD=y" "$kern_config" >"$tmp"
+mv "$tmp" "$kern_config"
+
 if [ -r "$rootfs_cpio" ]; then
 	echo "Removing rootfs_cpio..."
 	rm "$rootfs_cpio"
