@@ -306,6 +306,23 @@ define LINUX_FIXUP_CONFIG_ENDIANNESS
 endef
 endif
 
+define LINUX_FIXUP_INITRD
+	$(if $(BR2_TARGET_ROOTFS_CPIO),
+		$(call KCONFIG_ENABLE_OPT,CONFIG_BLK_DEV_INITRD,$(LINUX_DIR)/.config))
+	$(if $(BR2_TARGET_ROOTFS_INITRAMFS),
+		mkdir -p $(BINARIES_DIR)
+		touch $(BINARIES_DIR)/rootfs.cpio
+		$(call KCONFIG_SET_OPT,CONFIG_INITRAMFS_SOURCE,"$${BR_BINARIES_DIR}/rootfs.cpio",$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_RD_GZIP,y,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_RD_BZIP2,y,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_RD_LZMA,y,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_RD_XZ,y,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_RD_LZO,y,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_RD_LZ4,y,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_INITRAMFS_ROOT_UID,0,$(LINUX_DIR)/.config)
+		$(call KCONFIG_SET_OPT,CONFIG_INITRAMFS_ROOT_GID,0,$(LINUX_DIR)/.config))
+endef
+
 define LINUX_KCONFIG_FIXUP_CMDS
 	$(if $(LINUX_NEEDS_MODULES),
 		$(call KCONFIG_ENABLE_OPT,CONFIG_MODULES,$(@D)/.config))
@@ -318,18 +335,10 @@ define LINUX_KCONFIG_FIXUP_CMDS
 		$(call KCONFIG_ENABLE_OPT,CONFIG_AEABI,$(@D)/.config))
 	$(if $(BR2_powerpc)$(BR2_powerpc64)$(BR2_powerpc64le),
 		$(call KCONFIG_ENABLE_OPT,CONFIG_PPC_DISABLE_WERROR,$(@D)/.config))
-	$(if $(BR2_TARGET_ROOTFS_CPIO),
-		$(call KCONFIG_ENABLE_OPT,CONFIG_BLK_DEV_INITRD,$(@D)/.config))
 	# As the kernel gets compiled before root filesystems are
 	# built, we create a fake cpio file. It'll be
 	# replaced later by the real cpio archive, and the kernel will be
 	# rebuilt using the linux-rebuild-with-initramfs target.
-	$(if $(BR2_TARGET_ROOTFS_INITRAMFS),
-		mkdir -p $(BINARIES_DIR)
-		touch $(BINARIES_DIR)/rootfs.cpio
-		$(call KCONFIG_SET_OPT,CONFIG_INITRAMFS_SOURCE,"$${BR_BINARIES_DIR}/rootfs.cpio",$(@D)/.config)
-		$(call KCONFIG_SET_OPT,CONFIG_INITRAMFS_ROOT_UID,0,$(@D)/.config)
-		$(call KCONFIG_SET_OPT,CONFIG_INITRAMFS_ROOT_GID,0,$(@D)/.config))
 	$(if $(BR2_ROOTFS_DEVICE_CREATION_STATIC),,
 		$(call KCONFIG_ENABLE_OPT,CONFIG_DEVTMPFS,$(@D)/.config)
 		$(call KCONFIG_ENABLE_OPT,CONFIG_DEVTMPFS_MOUNT,$(@D)/.config))
@@ -582,6 +591,7 @@ linux-rebuild-with-initramfs:
 	@$(call MESSAGE,"Installing norootfs kernel")
 	$(call LINUX_INSTALL_IMAGE,$(BINARIES_DIR),".norootfs")
 	@$(call MESSAGE,"Rebuilding kernel with initramfs")
+	$(LINUX_FIXUP_INITRD)
 	# Build the kernel.
 	$(LINUX_MAKE_ENV) $(MAKE) $(LINUX_MAKE_FLAGS) -C $(LINUX_DIR) $(LINUX_TARGET_NAME)
 	$(LINUX_APPEND_DTB)
