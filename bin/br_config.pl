@@ -129,17 +129,23 @@ sub check_toolchain($)
 	return ($recommended ne $toolchain) ? $recommended : '';
 }
 
+my @linux_build_artefacts = (
+	".config",
+	"vmlinux",
+	"vmlinux.o",
+	"vmlinuz",
+	"System.map",
+);
+
 # Check for some obvious build artifacts that show us the local Linux source
 # tree is not clean.
 sub check_linux($)
 {
 	my ($local_linux) = @_;
 
-	return 0 if (-e "$local_linux/.config");
-	return 0 if (-e "$local_linux/vmlinux");
-	return 0 if (-e "$local_linux/vmlinux.o");
-	return 0 if (-e "$local_linux/vmlinuz");
-	return 0 if (-e "$local_linux/System.map");
+	foreach (@linux_build_artefacts) {
+		return 0 if (-e "$local_linux/$_");
+	}
 
 	return 1;
 }
