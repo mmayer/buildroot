@@ -132,7 +132,7 @@ sub check_toolchain($)
 my @linux_build_artefacts = (
 	".config",
 	"vmlinux",
-	"vmlinux.o",
+	"*.o",
 	"vmlinuz",
 	"System.map",
 );
