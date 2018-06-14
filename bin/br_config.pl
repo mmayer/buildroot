@@ -351,7 +351,12 @@ sub write_brcmstbmk($$$)
 		"below.\n".
 		"#\n".
 		"#" x 78, "\n\n".
-		"LINUX_OVERRIDE_SRCDIR = $linux_dir\n");
+		"LINUX_OVERRIDE_SRCDIR = $linux_dir\n" .
+		"LINUX_OVERRIDE_SRCDIR_RSYNC_EXCLUSIONS = \\\n");
+	foreach (@linux_build_artefacts) {
+		print(F "\t--exclude=\"$_\" \\\n");
+	}
+	print(F "\n");
 	close(F);
 }
 
