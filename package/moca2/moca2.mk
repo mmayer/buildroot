@@ -6,7 +6,7 @@
 
 BRCMROOT_VERSION = c38822d042bd729481f2cea6b2fd138b5e190fa8
 
-MOCA2_VERSION = master
+MOCA2_VERSION = $(BRCMROOT_VERSION)
 MOCA2_SITE = git://stbgit.broadcom.com/queue/uclinux-rootfs.git
 MOCA2_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
 MOCA2_DL_SUBDIR = brcm-pm
