@@ -9,12 +9,13 @@ BRCMROOT_VERSION = c38822d042bd729481f2cea6b2fd138b5e190fa8
 MOCA2_VERSION = master
 MOCA2_SITE = git://stbgit.broadcom.com/mm940762/uclinux-rootfs.git
 MOCA2_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
+MOCA2_DL_SUBDIR = brcm-pm
 MOCA2_LICENSE = Proprietary
 
 # Extract only what we need to save space.
 define MOCA2_EXTRACT_CMDS
 	$(call suitable-extractor,$(MOCA2_SOURCE)) \
-		$(DL_DIR)/$(MOCA2_SOURCE) | \
+		$(MOCA2_DL_DIR)/$(MOCA2_SOURCE) | \
 		$(TAR) --strip-components=1 -C $(MOCA2_DIR) \
 			--wildcards $(TAR_OPTIONS) - '*/user/moca2'
 endef
