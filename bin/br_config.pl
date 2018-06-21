@@ -417,6 +417,7 @@ my $prg = basename($0);
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
+my $ret = 0;
 my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
@@ -689,11 +690,16 @@ if (defined($opts{'i'})) {
 	print("Launching build, including file system images...\n");
 	# The "images" target only exists in the generated Makefile in
 	# $br_outputdir, so using "make O=..." does not work here.
-	system("make -C \"$br_outputdir\" images");
+	$ret = system("make -C \"$br_outputdir\" images");
+	$ret >>= 8;
 } elsif (defined($opts{'b'})) {
 	print("Launching build...\n");
-	system("make O=\"$br_outputdir\"");
+	$ret = system("make O=\"$br_outputdir\"");
+	$ret >>= 8;
 } else {
 	print("To build it, run the following commands:\n".
 	"\tcd $br_outputdir; make\n");
 }
+
+print(STDERR "$prg: exiting with code $ret\n") if ($ret > 0);
+exit($ret);
