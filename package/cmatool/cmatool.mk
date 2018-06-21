@@ -7,7 +7,7 @@
 BRCMROOT_VERSION = c38822d042bd729481f2cea6b2fd138b5e190fa8
 
 CMATOOL_VERSION = master
-CMATOOL_SITE = git://stbgit.broadcom.com/mm940762/uclinux-rootfs.git
+CMATOOL_SITE = git://stbgit.broadcom.com/queue/uclinux-rootfs.git
 CMATOOL_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
 CMATOOL_DL_SUBDIR = brcm-pm
 CMATOOL_LICENSE = LGPL-2.1
