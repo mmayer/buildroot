@@ -6,7 +6,7 @@
 
 BRCMROOT_VERSION = c38822d042bd729481f2cea6b2fd138b5e190fa8
 
-BRCM_PM_VERSION = master
+BRCM_PM_VERSION = $(BRCMROOT_VERSION)
 BRCM_PM_SITE = git://stbgit.broadcom.com/queue/uclinux-rootfs.git
 BRCM_PM_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
 BRCM_PM_DIR = uclinux-rootfs
