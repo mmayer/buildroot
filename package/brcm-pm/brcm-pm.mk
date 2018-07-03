@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-BRCMROOT_VERSION = 31ea028b3c64
+BRCMROOT_VERSION = $(call qstrip,$(BR2_BRCM_STB_TOOLS_VERSION))
 
 BRCM_PM_VERSION = $(BRCMROOT_VERSION)
 BRCM_PM_SITE = git://stbgit.broadcom.com/mm940762/stbtools.git
