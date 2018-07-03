@@ -4,11 +4,11 @@
 #
 ################################################################################
 
-BRCMROOT_VERSION = c38822d042bd729481f2cea6b2fd138b5e190fa8
+BRCMROOT_VERSION = 31ea028b3c64
 
 BRCM_SCRIPTS_VERSION = $(BRCMROOT_VERSION)
-BRCM_SCRIPTS_SITE = git://stbgit.broadcom.com/queue/uclinux-rootfs.git
-BRCM_SCRIPTS_SOURCE = uclinux-rootfs-$(BRCMROOT_VERSION).tar.gz
+BRCM_SCRIPTS_SITE = git://stbgit.broadcom.com/mm940762/stbtools.git
+BRCM_SCRIPTS_SOURCE = stbtools-$(BRCMROOT_VERSION).tar.gz
 BRCM_SCRIPTS_DL_SUBDIR = brcm-pm
 BRCM_SCRIPTS_LICENSE = GPL-2.0
 
