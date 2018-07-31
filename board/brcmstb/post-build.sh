@@ -91,8 +91,9 @@ done
 # Generate brcmstb.conf
 echo "Generating /etc/brcmstb.conf..."
 arch=`basename ${BASE_DIR}`
-# The Linux directory can be "linux-custom" or "linux-$tag"
-linux_dir=`ls -drt ${BUILD_DIR}/linux-* | grep -v linux-tools | head -1`
+# The Linux directory can be "linux-custom" or "linux-$tag". We also must ensure
+# we don't pick up directories like "linux-tools" or "linux-firmware".
+linux_dir=`ls -drt ${BUILD_DIR}/linux-* | egrep 'linux-(stb|custom)' | head -1`
 linux_ver=`./bin/linuxver.sh $linux_dir`
 cat >${TARGET_DIR}/etc/brcmstb.conf <<EOF
 TFTPHOST=`hostname -f`
