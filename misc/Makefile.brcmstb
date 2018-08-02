@@ -45,7 +45,7 @@ brcmstb-diffs: brcmstb-tarball
 brcmstb-release: brcmstb-diffs
 	@if [ "$(VERSION)" = "" ]; then exit 1; fi
 	for arch in `bin/get_archs.pl $(STB_VERSION)`; do \
-		bin/br_config.pl -o $(BRCMSTB_OUTPUT_DIR) -i \
+		bin/br_config.pl -o $(BRCMSTB_OUTPUT_DIR) -i -n \
 			-L misc/linux.master $${arch}; \
 	done
 	mkdir -p $(BINARY_DST)
