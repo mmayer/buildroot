@@ -14,9 +14,11 @@ SRC_DST		= $(BRCMSTB_RELEASE_DIR)/src
 
 brcmstb-tarball:
 	@if [ "$(VERSION)" = "" ]; then exit 1; fi
-#	@echo "Wiping any existing buildroot builds..."
-#	rm -rf ../buildroot/output
-	rm -rf $(BRCMSTB_RELEASE_DIR)
+	@echo "Getting ready to wipe any existing buildroot builds."
+	@echo "Hit Ctrl-C within 5 seconds to abort."
+	@sleep 5
+	@echo "Wiping $(BRCMSTB_OUTPUT_DIR)..."
+	rm -rf $(BRCMSTB_OUTPUT_DIR)
 	test -d $(SRC_DST) || mkdir -p $(SRC_DST)
 	@echo "Creating tar-ball (without downloads)..."
 	tar -C .. -c -f $(SRC_DST)/buildroot-$(DOTVERSION).tar \
@@ -51,8 +53,12 @@ brcmstb-release: brcmstb-diffs
 	mkdir -p $(BINARY_DST)
 	cp -a $(BRCMSTB_OUTPUT_DIR)/*/images/* $(BINARY_DST)
 	@echo "Adding downloaded sources to tar-ball..."
+	# We want to skip the GIT trees buildroot creates (e.g. dl/linux/git).
+	# Therefore, we exclude 'git' and 'git.readme'. If we ever wanted to
+	# bundle GIT itself, we'd likely have to add it in a separate step.
 	tar -C .. -r -f $(SRC_DST)/buildroot-$(DOTVERSION).tar \
-		--exclude git \
+		--exclude 'git' \
+		--exclude 'git.readme' \
 		buildroot/dl
 	bzip2 $(SRC_DST)/buildroot-$(DOTVERSION).tar
 
