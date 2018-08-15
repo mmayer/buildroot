@@ -17,7 +17,7 @@ if [ ! -r "${STBTOOLS}" ]; then
 		sed -e 's/"//g'`
 	if [ "${dl_cache}" != "" ]; then
 		echo "Attempting to find stbtools in ${dl_cache}..."
-		STBTOOLS=`ls -1t "${dl_cache}"/stbtools*.tar.gz 2>/dev/null | head -1`
+		STBTOOLS=`ls -1t "${dl_cache}"/*/stbtools*.tar.gz 2>/dev/null | head -1`
 	fi
 fi
 
