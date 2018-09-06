@@ -88,6 +88,18 @@ for d in flash hd nfs usb; do
 	mkdir ${TARGET_DIR}/mnt/${d}
 done
 
+# Fixing symlinks in /var
+echo "Turning some /var symlinks into directories..."
+for d in `find ${TARGET_DIR}/var -type l`; do
+	l=`readlink "$d"`
+	# We don't want any symlinks into /tmp. They break the ability to
+	# install into a FAT-formatted USB stick.
+	if echo "$l" | grep '/tmp' >/dev/null; then
+		rm -f "$d"
+		mkdir "$d"
+	fi
+done
+
 # Generate brcmstb.conf
 echo "Generating /etc/brcmstb.conf..."
 arch=`basename ${BASE_DIR}`
