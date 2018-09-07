@@ -100,6 +100,14 @@ for d in `find ${TARGET_DIR}/var -type l`; do
 	fi
 done
 
+# We don't want /etc/resolv.conf to be a symlink into /tmp, either
+resolvconf="${TARGET_DIR}/etc/resolv.conf"
+if [ -h "${resolvconf}" ]; then
+	echo "Creating empty /etc/resolv.conf..."
+	rm "${resolvconf}"
+	touch "${resolvconf}"
+fi
+
 # Generate brcmstb.conf
 echo "Generating /etc/brcmstb.conf..."
 arch=`basename ${BASE_DIR}`
