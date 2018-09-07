@@ -23,7 +23,8 @@ fi
 
 # BRCMSTB skeleton
 if [ ! -r "${STBTOOLS}" ]; then
-	echo "$prg: stbtools tar-ball not found, not copying skel..." 1>&2
+	echo "$prg: stbtools tar-ball not found, aborting!" 1>&2
+	exit 1
 else
 	echo "Extracting skel from ${STBTOOLS}..."
 	# Extract old "skel" directory straight into our new rootfs. If we ever
