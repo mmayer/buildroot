@@ -75,6 +75,8 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 		--exclude 'git.readme' \
 		buildroot/dl
 	bzip2 $(SRC_DST)/buildroot-$(DOTVERSION).tar
+	ln -s buildroot-$(DOTVERSION).tar.bz2 \
+		$(SRC_DST)/rootfs-$(DOTVERSION).tar.bz2
 
 brcmstb-%:
 	bin/br_config.pl -b $*
