@@ -64,6 +64,7 @@ if ($#ARGV < 0)  {
 	exit(1);
 }
 
+my $ret = 0;
 my $version = $ARGV[0];
 my $archs = get_archs($br_base, $version);
 
@@ -71,4 +72,7 @@ if (defined($archs)) {
 	print("$archs\n");
 } else {
 	print("Couldn't find architectures\n");
+	$ret = 1;
 }
+
+exit($ret);
