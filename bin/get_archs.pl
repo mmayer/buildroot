@@ -71,7 +71,7 @@ my $archs = get_archs($br_base, $version);
 if (defined($archs)) {
 	print("$archs\n");
 } else {
-	print("Couldn't find architectures\n");
+	print(STDERR "Couldn't find architectures\n");
 	$ret = 1;
 }
 
