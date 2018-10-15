@@ -101,6 +101,10 @@ for d in `find ${TARGET_DIR}/var -type l`; do
 	fi
 done
 
+# Create /data
+rm -rf ${TARGET_DIR}/data
+mkdir ${TARGET_DIR}/data
+
 # We don't want /etc/resolv.conf to be a symlink into /tmp, either
 resolvconf="${TARGET_DIR}/etc/resolv.conf"
 if [ -h "${resolvconf}" ]; then
