@@ -133,6 +133,8 @@ my @linux_build_artefacts = (
 	".config",
 	"vmlinux",
 	"*.o",
+	"*.s",
+	"generated/",
 	"vmlinuz",
 	"System.map",
 );
