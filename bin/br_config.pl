@@ -538,19 +538,26 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
 }
 
+if (defined($opts{'d'})) {
+	my $cfg = $opts{'d'};
+
+	# "defconfig" is a special case. It represents the default config for
+	# many architectures.
+	if ($cfg eq 'defconfig') {
+		$opts{'D'} = 1;
+		undef($opts{'d'});
+	} else {
+		# Buildroot expects the trailing "_defconfig" to be stripped.
+		$cfg =~ s/_?defconfig$//;
+		print("Using $cfg as Linux kernel configuration...\n");
+		$arch_config{$arch}{'BR2_LINUX_KERNEL_DEFCONFIG'} = $cfg;
+	}
+}
+
 if (defined($opts{'D'})) {
 	print("Using default Linux kernel configuration...\n");
 	$arch_config{$arch}{'BR2_LINUX_KERNEL_USE_ARCH_DEFAULT_CONFIG'} = 'y';
 	delete($arch_config{$arch}{'BR2_LINUX_KERNEL_DEFCONFIG'});
-}
-
-if (defined($opts{'d'})) {
-	my $cfg = $opts{'d'};
-
-	# Make it nice for the user and strip trailing _defconfig.
-	$cfg =~ s/_?defconfig$//;
-	print("Using $cfg as Linux kernel configuration...\n");
-	$arch_config{$arch}{'BR2_LINUX_KERNEL_DEFCONFIG'} = $cfg;
 }
 
 if (defined($opts{'j'})) {
