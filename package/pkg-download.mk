@@ -91,7 +91,7 @@ endif
 endif
 
 define DOWNLOAD
-	$(Q)mkdir -p $($(PKG)_DL_DIR)
+	$(Q)mkdir $(call qstrip,$(BR2_DL_DIR_OPTS)) -p $($(PKG)_DL_DIR)
 	$(Q)$(EXTRA_ENV) $(FLOCK) $(DL_WRAPPER) \
 		-c '$($(PKG)_DL_VERSION)' \
 		-d '$($(PKG)_DL_DIR)' \
