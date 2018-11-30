@@ -19,6 +19,7 @@
 
 use strict;
 use warnings;
+use Fcntl ':mode';
 use File::Basename;
 use File::Path qw(make_path);
 use Getopt::Std;
@@ -98,6 +99,34 @@ sub check_br()
 sub check_open_source_dir()
 {
 	return  (-d SHARED_OSS_DIR) ? 1 : 0;
+}
+
+# Without this explicit function prototype, Perl will complain that the
+# recursive call inside fix_oss_permission() is happening too early to check the
+# prototype.
+sub fix_oss_permissions($);
+
+sub fix_oss_permissions($)
+{
+	my ($dir) = @_;
+	my $mode = (stat($dir))[2] & 0777;
+	my $dh;
+
+	# If directory doesn't have rwx permissions for group and other, we
+	# add them. We silently fail if the attempt is denied, since there is
+	# nothing more we can do.
+	if (($mode & (S_IRWXG | S_IRWXO)) != (S_IRWXG | S_IRWXO)) {
+		chmod(0777, $dir) && print("Fixed permissions of $dir...\n");
+	}
+	opendir($dh, $dir);
+	while (readdir($dh)) {
+		# Skip "." and ".."
+		next if (/^\.{1,2}$/);
+		if (-d "$dir/$_") {
+			fix_oss_permissions("$dir/$_");
+		}
+	}
+	closedir($dh);
 }
 
 
@@ -533,6 +562,11 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 		mkdir($br_oss_cache);
 		chmod(0777, $br_oss_cache);
 	}
+
+	# This is a best-effort attempt to fix up directory permissions in the
+	# shared download cache. It will only work if the directories with the
+	# wrong permissions are owned by the user running br_config.pl
+	fix_oss_permissions($br_oss_cache);
 
 	print("Using $br_oss_cache as download cache...\n");
 	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
