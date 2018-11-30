@@ -107,7 +107,7 @@ endif
 ################################################################################
 
 define DOWNLOAD
-	$(Q)mkdir -p $($(2)_DL_DIR)
+	$(Q)mkdir $(call qstrip,$(BR2_DL_DIR_OPTS)) -p $($(2)_DL_DIR)
 	$(Q)$(EXTRA_ENV) $($(2)_DL_ENV) \
 		flock $($(2)_DL_DIR)/.lock $(DL_WRAPPER) \
 		-c '$($(2)_DL_VERSION)' \
