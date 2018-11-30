@@ -197,6 +197,20 @@ config BR2_DL_DIR
 
 	  The default is $(TOPDIR)/dl
 
+config BR2_DL_DIR_OPTS
+	string "Options for mkdir when it creates BR2_DL_DIR"
+	default ""
+	help
+	  Specify command line options for the mkdir command when it
+	  creates BR2_DL_DIR.
+
+	  For example, this can be used to specify directory permissions
+	  (say, "-m 0775") for directories inside BR2_DL_DIR. One would
+	  want this if the download directory is a shared "cache" for
+	  multiple users, so everybody can write to these directories.
+
+	  The default empty (no additional options).
+
 config BR2_HOST_DIR
 	string "Host dir"
 	default "$(BASE_DIR)/host"
