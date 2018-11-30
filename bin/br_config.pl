@@ -536,6 +536,7 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 
 	print("Using $br_oss_cache as download cache...\n");
 	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
+	$generic_config{'BR2_DL_DIR_OPTS'} = '-m 777';
 }
 
 if (defined($opts{'d'})) {
