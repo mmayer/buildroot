@@ -28,7 +28,8 @@ use Socket;
 
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
-use constant BR_MIRROR => qw(stbgit.broadcom.com);
+use constant BR_MIRROR_HOST => qw(stbgit.broadcom.com);
+use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
@@ -457,6 +458,7 @@ my $ret = 0;
 my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
+my $br_mirror;
 my $local_linux;
 my $toolchain;
 my $recommended_toolchain;
@@ -674,12 +676,21 @@ if (defined($kernel_header_version)) {
 		"fail\n");
 }
 
-# Only use the mirror if we can resolve the name, otherwise we'll run into a
-# DNS timeout for every package we need to download.
-if (gethostbyname(BR_MIRROR)) {
-	print("Using ".BR_MIRROR." as Buildroot mirror...\n");
-	$generic_config{'BR2_PRIMARY_SITE'} =
-		"http://".BR_MIRROR."/mirror/buildroot"
+if (defined($ENV{'BR_MIRROR'})) {
+	# If there is a user-specified mirror, use that.
+	$br_mirror = $ENV{'BR_MIRROR'};
+
+} else {
+	# Only use the Broadcom mirror if we can resolve the name, otherwise
+	# we'll run into a DNS timeout for every package we need to download.
+	if (gethostbyname(BR_MIRROR_HOST)) {
+		$br_mirror = "http://".BR_MIRROR_HOST.BR_MIRROR_PATH;
+	}
+}
+if (defined($br_mirror)) {
+	print("Using $br_mirror as Buildroot mirror...\n");
+	$generic_config{'BR2_PRIMARY_SITE'} = $br_mirror;
+
 } else {
 	print("Not using a Buildroot mirror...\n");
 }
