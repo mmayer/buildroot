@@ -24,9 +24,11 @@ use File::Basename;
 use File::Path qw(make_path);
 use Getopt::Std;
 use POSIX;
+use Socket;
 
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
+use constant BR_MIRROR => qw(stbgit.broadcom.com);
 use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
@@ -670,6 +672,16 @@ if (defined($kernel_header_version)) {
 } else {
 	print("WARNING: couldn't detect kernel header version; build may ".
 		"fail\n");
+}
+
+# Only use the mirror if we can resolve the name, otherwise we'll run into a
+# DNS timeout for every package we need to download.
+if (gethostbyname(BR_MIRROR)) {
+	print("Using ".BR_MIRROR." as Buildroot mirror...\n");
+	$generic_config{'BR2_PRIMARY_SITE'} =
+		"http://".BR_MIRROR."/mirror/buildroot"
+} else {
+	print("Not using a Buildroot mirror...\n");
 }
 
 if ($is_64bit) {
