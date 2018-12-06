@@ -13,7 +13,7 @@ STBTOOLS=`ls -1t dl/brcm-pm/stbtools-*.tar.gz 2>/dev/null | head -1`
 # If the stbtools tar-ball doesn't exist in the local download directory, check
 # if we have a download cache elsewhere.
 if [ ! -r "${STBTOOLS}" ]; then
-	dl_cache=`grep BR2_DL_DIR "${TARGET_DIR}/../.config" | cut -d= -f2 | \
+	dl_cache=`grep BR2_DL_DIR= "${TARGET_DIR}/../.config" | cut -d= -f2 | \
 		sed -e 's/"//g'`
 	if [ "${dl_cache}" != "" ]; then
 		echo "Attempting to find stbtools in ${dl_cache}..."
