@@ -13,7 +13,8 @@ EBTABLES_STATIC = $(if $(BR2_STATIC_LIBS),static)
 EBTABLES_K64U32 = $(if $(BR2_KERNEL_64_USERLAND_32),-DKERNEL_64_USERSPACE_32)
 
 define EBTABLES_BUILD_CMDS
-	$(MAKE) $(TARGET_CONFIGURE_OPTS) LIBDIR=/lib/ebtables $(EBTABLES_STATIC) \
+	$(MAKE) $(TARGET_CONFIGURE_OPTS) \
+		LIBDIR=/$(BR2_ROOTFS_LIB_DIR)/ebtables $(EBTABLES_STATIC) \
 		CFLAGS="$(TARGET_CFLAGS) $(EBTABLES_K64U32)" -C $(@D)
 endef
 
@@ -36,7 +37,7 @@ else
 define EBTABLES_INSTALL_TARGET_CMDS
 	$(foreach so,$(wildcard $(@D)/*.so $(@D)/extensions/*.so), \
 		$(INSTALL) -m 0755 -D $(so) \
-			$(TARGET_DIR)/lib/ebtables/$(notdir $(so))
+			$(TARGET_DIR)/$(BR2_ROOTFS_LIB_DIR)/ebtables/$(notdir $(so))
 	)
 	$(INSTALL) -m 0755 -D $(@D)/ebtables $(TARGET_DIR)/sbin/ebtables
 	$(INSTALL) -m 0644 -D $(@D)/ethertypes $(TARGET_DIR)/etc/ethertypes
