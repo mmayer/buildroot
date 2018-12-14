@@ -113,6 +113,10 @@ if [ -h "${resolvconf}" ]; then
 	touch "${resolvconf}"
 fi
 
+# Add ldd from the host's sysroot
+echo "Copying ldd..."
+cp -p ${HOST_DIR}/*gnu*/sysroot/usr/bin/ldd ${TARGET_DIR}/usr/bin
+
 # Generate brcmstb.conf
 echo "Generating /etc/brcmstb.conf..."
 arch=`basename ${BASE_DIR}`
