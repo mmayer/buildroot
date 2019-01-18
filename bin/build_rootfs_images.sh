@@ -163,23 +163,6 @@ make_jffs2_img 64
 make_jffs2_img 128
 make_jffs2_img 256
 
-#echo "Writing NFS rootfs tarball..."
-#rm -f tmp/nfsroot.tar images/nfsroot-${TARGET}.tar.bz2
-#rm -rf tmp/romfs
-
-#mkdir -p tmp/romfs/boot
-#cp $LINUXDIR/.config tmp/romfs/boot/config
-#cp $LINUXDIR/Module.symvers tmp/romfs/boot/
-#cp $LINUXDIR/System.map tmp/romfs/boot/
-#cp $LINUXDIR/vmlinux tmp/romfs/boot/
-
-#cp misc/devconsole.tar tmp/nfsroot.tar
-#chmod u+w tmp/nfsroot.tar
-#tar --exclude=".git*" --owner 0 --group 0 -rf tmp/nfsroot.tar romfs/
-#tar --owner 0 --group 0 -rf tmp/nfsroot.tar -C tmp romfs/boot/
-#bzip2 < tmp/nfsroot.tar > images/nfsroot-${TARGET}.tar.bz2
-#echo "  -> images/nfsroot-${TARGET}.tar.bz2"
-
 test -e "tmp/$WARN_FILE" && mv "tmp/$WARN_FILE" "$OUTPUT_DIR/target"
 test -e "tmp/console" && mv "tmp/console" "$OUTPUT_DIR/target/dev"
 
