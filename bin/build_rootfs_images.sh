@@ -32,6 +32,9 @@ fi
 
 export PATH
 
+# Used by ubifs and jffs
+fs="${OUTPUT_DIR}/target"
+
 set -e
 
 function make_ubi_img()
@@ -50,7 +53,6 @@ function make_ubi_img()
 	fi
 
 	out="${OUTPUT_DIR}/images/ubifs-${pebk}k-${page}-${TARGET}.img"
-	fs="${OUTPUT_DIR}/target"
 
 	echo "Writing UBIFS image for ${pebk}kB erase, ${minmsg}..."
 
@@ -120,59 +122,72 @@ test -e "$OUTPUT_DIR/target/$WARN_FILE" && \
 test -e "$OUTPUT_DIR/target/dev/console" && \
 	mv "$OUTPUT_DIR/target/dev/console" tmp
 
-echo "Writing SQUASHFS image..."
-rm -f "${OUTPUT_DIR}/images/squashfs-${TARGET}.img"
-mksquashfs "${OUTPUT_DIR}/target" \
-	"${OUTPUT_DIR}/images/squashfs-${TARGET}.img" \
-	-processors 1 -root-owned -p "/dev/console c 0600 0 0 5 1"
-chmod 0644 "${OUTPUT_DIR}/images/squashfs-${TARGET}.img"
-echo "  -> ${OUTPUT_DIR}/images/squashfs-${TARGET}.img"
-echo ""
-
-# 64k erase / 1B unit size - NOR
-make_ubi_img 64 1
-
-# 128k erase / 1B unit size - NOR
-make_ubi_img 128 1
-
-# 256k erase / 1B unit size - NOR
-make_ubi_img 256 1
-
-if [ "$build_nand_ubifs" = "1" ]; then
-
-	# 16k erase / 512B page - small NAND
-	make_ubi_img 16 512
-
-	# 128k erase / 2048B page - NAND
-	make_ubi_img 128 2048
-
-	# 256k erase / 4096B page - NAND
-	make_ubi_img 256 4096
-
-	# 512k erase / 4096B page - large NAND
-	make_ubi_img 512 4096
-
-	# 1MB erase / 4096B page - large NAND
-	make_ubi_img 1024 4096
-
-	# 1MB erase / 8192B page - large NAND
-	make_ubi_img 1024 8192
-
-	# 2MB erase / 4096B page - large NAND
-	make_ubi_img 2048 4096
-
-	# 2MB erase / 8192B page - large NAND
-	make_ubi_img 2048 8192
-
-else
-	echo "Skipping NAND UBIFS images - set build_nand_ubifs=1 if they are needed"
+if which mksquashfs >/dev/null; then
+	echo "Writing SQUASHFS image..."
+	rm -f "${OUTPUT_DIR}/images/squashfs-${TARGET}.img"
+	mksquashfs "${OUTPUT_DIR}/target" \
+		"${OUTPUT_DIR}/images/squashfs-${TARGET}.img" \
+		-processors 1 -root-owned -p "/dev/console c 0600 0 0 5 1"
+	chmod 0644 "${OUTPUT_DIR}/images/squashfs-${TARGET}.img"
+	echo "  -> ${OUTPUT_DIR}/images/squashfs-${TARGET}.img"
 	echo ""
+else
+	echo "[WARNING] Couldn't find mksquashfs. Skipping squashfs images."
+	echo "[WARNING] Please consider installing the respective package."
 fi
 
-# jffs2 NOR images for 64k, 128k, 256k erase sizes
-make_jffs2_img 64
-make_jffs2_img 128
-make_jffs2_img 256
+if which mkfs.ubifs >/dev/null; then
+	# 64k erase / 1B unit size - NOR
+	make_ubi_img 64 1
+
+	# 128k erase / 1B unit size - NOR
+	make_ubi_img 128 1
+
+	# 256k erase / 1B unit size - NOR
+	make_ubi_img 256 1
+
+	if [ "$build_nand_ubifs" = "1" ]; then
+		# 16k erase / 512B page - small NAND
+		make_ubi_img 16 512
+
+		# 128k erase / 2048B page - NAND
+		make_ubi_img 128 2048
+
+		# 256k erase / 4096B page - NAND
+		make_ubi_img 256 4096
+
+		# 512k erase / 4096B page - large NAND
+		make_ubi_img 512 4096
+
+		# 1MB erase / 4096B page - large NAND
+		make_ubi_img 1024 4096
+
+		# 1MB erase / 8192B page - large NAND
+		make_ubi_img 1024 8192
+
+		# 2MB erase / 4096B page - large NAND
+		make_ubi_img 2048 4096
+
+		# 2MB erase / 8192B page - large NAND
+		make_ubi_img 2048 8192
+	else
+		echo "[INFO] Skipping NAND UBIFS images."
+		echo "[INFO] Set build_nand_ubifs=1 if they are needed"
+	fi
+else
+	echo "[WARNING] Couldn't find mkfs.ubifs. Skipping ubifs images."
+	echo "[WARNING] Please consider installing the respective package."
+fi
+
+if which mkfs.jffs2 >/dev/null; then
+	# jffs2 NOR images for 64k, 128k, 256k erase sizes
+	make_jffs2_img 64
+	make_jffs2_img 128
+	make_jffs2_img 256
+else
+	echo "[WARNING] Couldn't find mkfs.jffs2. Skipping jffs images."
+	echo "[WARNING] Please consider installing the respective package."
+fi
 
 test -e "tmp/$WARN_FILE" && mv "tmp/$WARN_FILE" "$OUTPUT_DIR/target"
 test -e "tmp/console" && mv "tmp/console" "$OUTPUT_DIR/target/dev"
