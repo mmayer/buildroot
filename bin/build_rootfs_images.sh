@@ -1,7 +1,6 @@
 #!/bin/bash
-
-# Include /sbin and /usr/sbin in the PATH (for mkfs.jffs2, etc.)
-export PATH=$PATH:/sbin:/usr/sbin
+prg=$(basename $0)
+parent_dir=$(dirname $(dirname $0))
 
 # UBIFS logical eraseblock limit - increase this number if mkfs.ubifs complains
 max_leb_cnt=2047
@@ -20,6 +19,18 @@ if [ -d "target" -a -d "images" ]; then
 else
 	OUTPUT_DIR="output/$1"
 fi
+
+hostpath="$parent_dir/output/$TARGET/host"
+
+# For mkfs.jffs2 & co. Use the host-tools version if it exists. Try the system
+# version otherwise.
+if [ -d "$hostpath" ]; then
+	PATH="$hostpath/bin:$hostpath/sbin:$PATH"
+else
+	PATH="$PATH:/sbin:/usr/sbin"
+fi
+
+export PATH
 
 set -e
 
