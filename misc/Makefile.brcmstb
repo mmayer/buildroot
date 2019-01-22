@@ -63,6 +63,8 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	for arch in `bin/get_archs.pl $(STB_VERSION)`; do \
 		bin/br_config.pl -o $(BRCMSTB_OUTPUT_DIR) -i -n \
 			-L misc/linux.master $${arch}; \
+		err=$$?; \
+		test $${err} = 0 || exit $${err}; \
 	done
 	mkdir -p $(BINARY_DST)
 	cp -a $(BRCMSTB_OUTPUT_DIR)/*/images/* $(BINARY_DST)
