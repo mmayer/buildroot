@@ -21,7 +21,7 @@ use strict;
 use warnings;
 use Fcntl ':mode';
 use File::Basename;
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 use Getopt::Std;
 use POSIX;
 use Socket;
@@ -37,6 +37,7 @@ use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
 
 use constant SLEEP_TIME => 5;
+use constant STALE_THRESHOLD => 7 * 24 * 60 * 60; 	# days in seconds
 
 my %arch_config = (
 	'arm64' => {
@@ -132,6 +133,62 @@ sub fix_oss_permissions($)
 	closedir($dh);
 }
 
+# Find downloaded Linux tar-balls
+sub find_tarball($)
+{
+	my ($dir) = @_;
+	my @found = ();
+	my $dh;
+
+	opendir($dh, $dir);
+	while (readdir($dh)) {
+		if (/linux-stb.*\.tar/) {
+			push(@found, $_);
+		}
+	}
+	closedir($dh);
+
+	return @found;
+}
+
+# Search for outdated sources in the download directory and delete them.
+sub check_oss_stale_sources($$)
+{
+	my ($dir, $output_dir) = @_;
+	my $linux = "$dir/linux";
+	my @tar_balls;
+
+	print("Checking $dir for stale sources...\n");
+	if (-d $linux) {
+		my $now = time();
+		my $mtime;
+
+		if (-d "$linux/git") {
+			$mtime = (stat("$linux/git"))[9];
+		} else {
+			$mtime = (stat($linux))[9];
+		}
+
+		@tar_balls = find_tarball($linux);
+
+		if ($now - $mtime > STALE_THRESHOLD) {
+			print("$linux is stale, removing it...\n");
+			remove_tree($linux, {keep_root => 1});
+
+			# Use the tar-balls we found to remove Linux build
+			# directories if they exist.
+			foreach my $v (@tar_balls) {
+				my $linux_build;
+				$v =~ s/\.tar.*//;
+				$linux_build = "$output_dir/build/$v";
+				if (-d $linux_build) {
+					print("Removing $linux_build...\n");
+					remove_tree($linux_build);
+				}
+			}
+		}
+	}
+}
 
 # Check if the specified toolchain is the recommended one.
 sub check_toolchain($)
@@ -575,6 +632,10 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 	print("Using $br_oss_cache as download cache...\n");
 	$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
 	$generic_config{'BR2_DL_DIR_OPTS'} = '-m 777';
+
+	check_oss_stale_sources($br_oss_cache, $br_outputdir);
+} else {
+	check_oss_stale_sources('dl', $br_outputdir);
 }
 
 if (defined($opts{'d'})) {
