@@ -59,6 +59,7 @@ my %arch_config = (
 		'BR2_MIPS_FP32_MODE_32' => 'y',
 		'BR2_LINUX_KERNEL_DEFCONFIG' => 'bmips_stb',
 		'BR2_LINUX_KERNEL_VMLINUX' => 'y',
+		'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION' => 'stb-4.1',
 	},
 );
 
@@ -79,7 +80,7 @@ my %toolchain_config = (
 my %generic_config = (
 	'BR2_LINUX_KERNEL_CUSTOM_REPO_URL' =>
 				'git://stbgit.broadcom.com/queue/linux.git',
-	'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION' => 'stb-4.1',
+	'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION' => 'stb-4.9',
 );
 
 sub check_br()
@@ -796,9 +797,9 @@ if ($is_64bit) {
 	}
 }
 
-write_config($arch_config{$arch}, $temp_config, 1);
+write_config(\%generic_config, $temp_config, 1);
+write_config($arch_config{$arch}, $temp_config, 0);
 write_config($toolchain_config{$arch}, $temp_config, 0);
-write_config(\%generic_config, $temp_config, 0);
 
 system("support/kconfig/merge_config.sh -m configs/brcmstb_defconfig ".
 	"\"$temp_config\"");
