@@ -125,8 +125,8 @@ arch=`basename ${BASE_DIR}`
 linux_dir=`ls -drt ${BUILD_DIR}/linux-* | egrep 'linux-(stb|custom)' | head -1`
 linux_ver=`./bin/linuxver.sh $linux_dir`
 cat >${TARGET_DIR}/etc/brcmstb.conf <<EOF
-TFTPHOST=`hostname -f`
-TFTPPATH=$linux_ver
+TFTPHOST=${TFTPHOST:=`hostname -f`}
+TFTPPATH=${TFTPPATH:=$linux_ver}
 PLAT=$arch
 VERSION=$linux_ver
 EOF
