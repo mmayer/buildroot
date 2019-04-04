@@ -144,3 +144,9 @@ rm -rf ${TARGET_DIR}/usr/share/legal-info/
 mkdir ${TARGET_DIR}/usr/share/legal-info/
 grep "GPL-3.0" ${BASE_DIR}/legal-info/manifest.csv  | cut -d, -f1 > ${TARGET_DIR}/usr/share/legal-info/GPL-3.0-packages
 sed -i 's| -e /bin/gdbserver -o -e /bin/gdb | -s /usr/share/legal-info/GPL-3.0-packages |' ${rcS}
+
+# Copy directory structure from ${BASE_DIR}/files to the target
+echo "Copying supplemental files"
+if [ -d "${BASE_DIR}/files" ]; then
+	cp -fpR ${BASE_DIR}/files/* ${TARGET_DIR}
+fi
