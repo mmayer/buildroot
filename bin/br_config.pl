@@ -30,6 +30,7 @@ use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
 use constant BR_MIRROR_HOST => qw(stbgit.broadcom.com);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
+use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
 use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
@@ -124,11 +125,11 @@ sub fix_oss_permissions($)
 		chmod(0777, $dir) && print("Fixed permissions of $dir...\n");
 	}
 	opendir($dh, $dir);
-	while (readdir($dh)) {
+	while (my $entry = readdir($dh)) {
 		# Skip "." and ".."
-		next if (/^\.{1,2}$/);
-		if (-d "$dir/$_") {
-			fix_oss_permissions("$dir/$_");
+		next if ($entry =~ /^\.{1,2}$/);
+		if (-d "$dir/$entry") {
+			fix_oss_permissions("$dir/$entry");
 		}
 	}
 	closedir($dh);
@@ -228,6 +229,26 @@ my @linux_build_artefacts = (
 	"vmlinuz",
 	"System.map",
 );
+
+# Check the host environment for troublesome settings.
+sub sanity_check($)
+{
+	my ($prg) = @_;
+	my @path = split(/:/, $ENV{'PATH'});
+
+	foreach my $p (@path) {
+		foreach my $f (FORBIDDEN_PATHS) {
+			if ($f eq $p) {
+				print(STDERR "$prg: \"$f\" must not be in ".
+					"your PATH\n");
+				print(STDERR $ENV{'PATH'}."\n");
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
 
 # Check for some obvious build artifacts that show us the local Linux source
 # tree is not clean.
@@ -340,8 +361,7 @@ sub get_kernel_header_version($$)
 	if (defined($arch_config{$arch}->{'BR2_mipsel'})) {
 		$compiler_arch .= "el";
 	}
-	$sys_root = $toolchain;
-	$sys_root = `ls -d "$sys_root/$compiler_arch"*/sys*root 2>/dev/null`;
+	$sys_root = `ls -d "$toolchain/$compiler_arch"*/sys*root 2>/dev/null`;
 	chomp($sys_root);
 	if ($sys_root eq '') {
 		return undef;
@@ -548,6 +568,10 @@ if (!defined($arch_config{$arch})) {
 
 if (defined($opts{'L'}) && defined($opts{'l'})) {
 	print(STDERR "$prg: options -L and -l cannot be specified together\n");
+	exit(1);
+}
+
+if (!sanity_check($prg)) {
 	exit(1);
 }
 
