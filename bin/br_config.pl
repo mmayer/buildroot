@@ -516,6 +516,7 @@ sub print_usage($)
 		"          -j <jobs>....run <jobs> parallel build jobs\n".
 		"          -L <path>....use local <path> as Linux kernel\n".
 		"          -l <url>.....use <url> as the Linux kernel repo\n".
+		"          -M <url>.....use <url> as BR mirror ('-' for none)\n".
 		"          -n...........do not use shared download cache\n".
 		"          -o <path>....use <path> as the BR output directory\n".
 		"          -t <path>....use <path> as toolchain directory\n".
@@ -542,7 +543,7 @@ my $kernel_header_version;
 my $arch;
 my %opts;
 
-getopts('3:bcDd:f:ij:L:l:no:t:v:', \%opts);
+getopts('3:bcDd:f:ij:L:l:M:no:t:v:', \%opts);
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -760,18 +761,26 @@ if (defined($kernel_header_version)) {
 		"fail\n");
 }
 
+# Set custom Buildroot mirror
 if (defined($ENV{'BR_MIRROR'})) {
-	# If there is a user-specified mirror, use that.
 	$br_mirror = $ENV{'BR_MIRROR'};
+}
 
-} else {
+# Command line option -M supersedes environment to specify mirror
+if (defined($opts{'M'})) {
+	# Option "-M -" disables using a mirror. This overrides the environment
+	# variable BR_MIRROR and the built-in default.
+	$br_mirror = $opts{'M'};
+}
+
+if (!defined($br_mirror)) {
 	# Only use the Broadcom mirror if we can resolve the name, otherwise
 	# we'll run into a DNS timeout for every package we need to download.
 	if (gethostbyname(BR_MIRROR_HOST)) {
 		$br_mirror = "http://".BR_MIRROR_HOST.BR_MIRROR_PATH;
 	}
 }
-if (defined($br_mirror)) {
+if (defined($br_mirror) && $br_mirror ne '-') {
 	print("Using $br_mirror as Buildroot mirror...\n");
 	$generic_config{'BR2_PRIMARY_SITE'} = $br_mirror;
 
