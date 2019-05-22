@@ -27,6 +27,8 @@ MTD_DEPENDENCIES += openssl
 MTD_CONF_OPTS += --with-crypto
 else
 MTD_CONF_OPTS += --without-crypto
+# Without encryption, we have to silence the assert() calls.
+TARGET_CPPFLAGS += -DNDEBUG
 endif
 ifeq ($(BR2_PACKAGE_ZSTD),y)
 MTD_DEPENDENCIES += zstd
@@ -52,6 +54,9 @@ MTD_CONF_OPTS += --with-xattr
 else
 MTD_CONF_OPTS += --without-xattr
 endif
+
+# The host build doesn't support encryption. We must silence the assert() calls.
+HOST_CPPFLAGS += -DNDEBUG
 
 HOST_MTD_DEPENDENCIES = host-zlib host-lzo host-util-linux host-zstd
 HOST_MTD_CONF_OPTS = \
