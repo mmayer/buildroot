@@ -612,4 +612,16 @@ config BR2_TOOLCHAIN_HAS_LIBQUADMATH
 	bool
 	default y if BR2_i386 || BR2_x86_64
 
+config BR2_TOOLCHAIN_HAS_LIBASAN
+	bool
+
+config BR2_TOOLCHAIN_HAS_LIBLSAN
+	bool
+
+config BR2_TOOLCHAIN_HAS_LIBTSAN
+	bool
+
+config BR2_TOOLCHAIN_HAS_LIBUBSAN
+	bool
+
 endmenu
