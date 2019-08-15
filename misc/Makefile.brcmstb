@@ -73,8 +73,7 @@ linux-release:
 linux-diffs:
 	@echo "Generating Linux diffs..."
 	test -d $(SRC_DST) || mkdir -p $(SRC_DST)
-	(cd ..; tools/makedelta.pl)
-	mv ../delta*.patch.bz2 $(SRC_DST)
+	bin/makedelta.pl misc/linux.master $(SRC_DST)
 
 brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	@if [ "$(VERSION)" = "" ]; then exit 1; fi
