@@ -9,6 +9,8 @@ DOTVERSION	:= $(patsubst 3%,3.%,$(patsubst 4%,4.%,$(patsubst 5%,5.%,$(VERSION)))
 MAJOR_VERSION	:= $(shell echo $(VERSION) | cut -d- -f1)
 STB_VERSION	:= stb-$(shell echo $(DOTVERSION) | cut -d- -f1)
 
+STBTOOLS_SRC_PATH := dl/brcm-pm
+STBTOOLS_GEN_TAR := $(STBTOOLS_SRC_PATH)/git/gen_tarball.sh
 STBTOOLS_VERSION := $(shell grep 'default [0-9a-f]\+$$' \
 	package/brcm-pm/Config.in | awk '{ print $$2 }')
 
@@ -96,7 +98,15 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	bzip2 $(SRC_DST)/buildroot-$(DOTVERSION).tar
 	ln -s buildroot-$(DOTVERSION).tar.bz2 \
 		$(SRC_DST)/rootfs-$(DOTVERSION).tar.bz2
-	cp -p dl/brcm-pm/stbtools-$(STBTOOLS_VERSION).tar.gz $(SRC_DST)
+	# Use stbtools script to generate the stbtools tar-ball, if it exists.
+	# Fall back to the tar-ball Buildroot generated, if it doesn't.
+	if [ -x $(STBTOOLS_GEN_TAR) ]; then \
+		$(STBTOOLS_GEN_TAR) $(STBTOOLS_VERSION) $(SRC_DST); \
+	else \
+		echo "Copying stbtools-$(STBTOOLS_VERSION).tar.gz..."; \
+		cp -p $(STBTOOLS_SRC_PATH)/stbtools-$(STBTOOLS_VERSION).tar.gz \
+			$(SRC_DST); \
+	fi
 
 brcmstb-%:
 	bin/br_config.pl -b $*
