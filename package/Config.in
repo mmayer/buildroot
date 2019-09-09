@@ -11,7 +11,7 @@ menu "Target packages"
 
 menu "Broadcom packages"
 	source "package/brcm-pm/Config.in"
-	source "package/brcm-scripts/Config.in"
+	source "package/brcm-skel/Config.in"
 	source "package/brcm-test-modules/Config.in"
 	source "package/cmatool/Config.in"
 	source "package/moca2/Config.in"
