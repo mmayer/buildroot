@@ -5,39 +5,6 @@ set -e
 
 prg=`basename $0`
 
-# BR config file
-DOT_CONFIG="${TARGET_DIR}/../.config"
-# Temp directory for old skeleton (not currently used)
-SKEL_DIR="${BUILD_DIR}/brcmstb_skel"
-# stbtools version (GIT hash)
-STBTOOLS_VERSION=`grep BR2_BRCM_STB_TOOLS_VERSION= "${DOT_CONFIG}" | \
-	cut -d= -f2 | sed -e 's/"//g'`
-STBTOOLS_TAR="stbtools-${STBTOOLS_VERSION}.tar.gz"
-STBTOOLS="dl/brcm-pm/${STBTOOLS_TAR}"
-
-# If the stbtools tar-ball doesn't exist in the local download directory, check
-# if we have a download cache elsewhere.
-if [ ! -r "${STBTOOLS}" ]; then
-	dl_cache=`grep BR2_DL_DIR= "${DOT_CONFIG}" | cut -d= -f2 | \
-		sed -e 's/"//g'`
-	if [ "${dl_cache}" != "" ]; then
-		echo "Attempting to find stbtools in ${dl_cache}..."
-		STBTOOLS="${dl_cache}/brcm-pm/${STBTOOLS_TAR}"
-	fi
-fi
-
-# BRCMSTB skeleton
-if [ ! -r "${STBTOOLS}" ]; then
-	echo "$prg: stbtools tar-ball not found, aborting!" 1>&2
-	exit 1
-fi
-
-echo "Extracting skel from ${STBTOOLS}..."
-# Extract old "skel" directory straight into our new rootfs. If we ever need to
-# be more selective, we'll extract it into a temporary location (${SKEL_DIR})
-# and pick what we need from there.
-tar -C "${TARGET_DIR}" -x -z -f "${STBTOOLS}" --wildcards \
-	--strip-components=2 '*/skel'
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
 
