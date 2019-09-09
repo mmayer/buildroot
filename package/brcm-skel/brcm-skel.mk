@@ -12,6 +12,9 @@ BRCM_SKEL_SOURCE = stbtools-$(BRCMROOT_VERSION).tar.gz
 BRCM_SKEL_DL_SUBDIR = brcm-pm
 BRCM_SKEL_LICENSE = GPL-2.0
 
+# Ensure that packages initscripts & busybox don't overwrite any of our files
+BRCM_SKEL_DEPENDENCIES = initscripts busybox
+
 # Extract only what we need to save space.
 define BRCM_SKEL_EXTRACT_CMDS
 	$(call suitable-extractor,$(BRCM_SKEL_SOURCE)) \
