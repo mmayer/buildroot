@@ -24,7 +24,7 @@ define BRCM_SKEL_EXTRACT_CMDS
 endef
 
 define BRCM_SKEL_INSTALL_TARGET_CMDS
-	cp -p $(@D)/skel/bin/* $(TARGET_DIR)/bin
+	rsync -a --exclude .gitignore $(@D)/skel/ $(TARGET_DIR)
 endef
 
 $(eval $(generic-package))
