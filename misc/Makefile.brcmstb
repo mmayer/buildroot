@@ -79,6 +79,7 @@ linux-diffs:
 
 brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	@if [ "$(VERSION)" = "" ]; then exit 1; fi
+	unset BR_SKIP_LEGAL_INFO; \
 	for arch in `bin/get_archs.pl $(STB_VERSION)`; do \
 		bin/br_config.pl -o $(BRCMSTB_OUTPUT_DIR) -i -n \
 			-L misc/linux.master $${arch}; \
