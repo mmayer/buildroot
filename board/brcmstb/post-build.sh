@@ -124,13 +124,26 @@ if [ -x bin/find_64bit_libs.sh ]; then
 	bin/find_64bit_libs.sh "${TARGET_DIR}"
 fi
 
-# Generate list of GPL-3.0 packages
-echo "Generating GPL-3.0 packages list"
-make -C ${BASE_DIR} legal-info
-rm -rf ${TARGET_DIR}/usr/share/legal-info/
-mkdir ${TARGET_DIR}/usr/share/legal-info/
-grep "GPL-3.0" ${BASE_DIR}/legal-info/manifest.csv  | cut -d, -f1 > ${TARGET_DIR}/usr/share/legal-info/GPL-3.0-packages
-sed -i 's| -e /bin/gdbserver -o -e /bin/gdb | -s /usr/share/legal-info/GPL-3.0-packages |' ${rcS}
+# BR_SKIP_LEGAL_INFO permits a developer to skip the "make legal-info" stage to
+# shorten build time. This option is for development only and must not be used
+# for release builds.
+set +u
+test -z ${BR_SKIP_LEGAL_INFO} && BR_SKIP_LEGAL_INFO=""
+set -u
+if [ "${BR_SKIP_LEGAL_INFO}" != "" ]; then
+	echo "Not generating GPL-3.0 packages list per user request."
+	echo "See environment variable \$BR_SKIP_LEGAL_INFO."
+else
+	# Generate list of GPL-3.0 packages
+	echo "Generating GPL-3.0 packages list"
+	make -C ${BASE_DIR} legal-info
+	rm -rf ${TARGET_DIR}/usr/share/legal-info/
+	mkdir ${TARGET_DIR}/usr/share/legal-info/
+	grep "GPL-3.0" ${BASE_DIR}/legal-info/manifest.csv | \
+		cut -d, -f1 \
+			> ${TARGET_DIR}/usr/share/legal-info/GPL-3.0-packages
+	sed -i 's| -e /bin/gdbserver -o -e /bin/gdb | -s /usr/share/legal-info/GPL-3.0-packages |' ${rcS}
+fi
 
 # Copy directory structure from ${BASE_DIR}/files to the target
 echo "Copying supplemental files"
