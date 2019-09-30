@@ -745,9 +745,8 @@ if ($recommended_toolchain ne '') {
 		"$recommended_toolchain.\n");
 	print(STDERR "Hit Ctrl-C now or wait ".SLEEP_TIME." seconds...\n");
 	sleep(SLEEP_TIME);
-} else {
-	print("Using $toolchain as toolchain...\n");
 }
+print("Using $toolchain as toolchain...\n");
 $toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 
 # The toolchain may have changed since we last configured Buildroot. We need to
