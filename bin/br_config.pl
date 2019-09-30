@@ -288,6 +288,7 @@ sub get_cores()
 sub find_toolchain()
 {
 	my @path = split(/:/, $ENV{'PATH'});
+	my @toolchains;
 	my $dh;
 
 	foreach my $dir (@path) {
@@ -303,18 +304,17 @@ sub find_toolchain()
 
 	# If we didn't find a toolchain in the $PATH, we look in the standard
 	# location.
-	if (opendir($dh, TOOLCHAIN_DIR)) {
-		# Sort in reverse order, so newer toolchains appear first.
-		my @toolchains = sort { $b cmp $a }
-			grep { /stbgcc-[6-9]/ } readdir($dh);
+	return undef unless (opendir($dh, TOOLCHAIN_DIR));
 
-		closedir($dh);
+	# Sort in reverse order, so newer toolchains appear first.
+	@toolchains = sort { $b cmp $a }
+		grep { /stbgcc-[6-9]/ } readdir($dh);
+	closedir($dh);
 
-		foreach my $dir (@toolchains) {
-			if (-d TOOLCHAIN_DIR."/$dir/bin") {
-				return TOOLCHAIN_DIR."/$dir";
-			}
-		}
+	foreach my $dir (@toolchains) {
+		my $d = TOOLCHAIN_DIR."/$dir";
+
+		return $d if (-d "$d/bin");
 	}
 
 	return undef;
