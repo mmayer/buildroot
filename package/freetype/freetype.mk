@@ -47,7 +47,7 @@ endif
 # Extra fixing since includedir and libdir are expanded from configure values
 define FREETYPE_FIX_CONFIG_FILE
 	$(SED) 's:^includedir=.*:includedir="$${prefix}/include":' \
-		-e 's:^libdir=.*:libdir="$${exec_prefix}/lib":' \
+		-e 's:^libdir=.*:libdir="$${exec_prefix}/$(call qstrip,$(BR2_ROOTFS_LIB_DIR)):' \
 		$(STAGING_DIR)/usr/bin/freetype-config
 endef
 FREETYPE_POST_INSTALL_STAGING_HOOKS += FREETYPE_FIX_CONFIG_FILE
@@ -55,7 +55,7 @@ FREETYPE_POST_INSTALL_STAGING_HOOKS += FREETYPE_FIX_CONFIG_FILE
 # libpng isn't included in freetype-config & freetype2.pc :-/
 define FREETYPE_FIX_CONFIG_FILE_LIBS
 	$(SED) "s,^Libs.private:,& $(FREETYPE_LIBPNG_LIBS)," \
-		$(STAGING_DIR)/usr/lib/pkgconfig/freetype2.pc
+		$(STAGING_DIR)/usr/$(call qstrip,$(BR2_ROOTFS_LIB_DIR))/pkgconfig/freetype2.pc
 	$(SED) "s,-lfreetype,& $(FREETYPE_LIBPNG_LIBS)," \
 		$(STAGING_DIR)/usr/bin/freetype-config
 endef
