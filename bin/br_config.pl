@@ -539,6 +539,7 @@ my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
+my $kernel_fragments;
 my $local_linux;
 my $toolchain;
 my $toolchain_ver;
@@ -641,6 +642,8 @@ if (defined($opts{'c'})) {
 	exit($status);
 }
 
+$kernel_fragments = $opts{'F'} || '';
+
 $toolchain_ver = $opts{'T'} || '';
 $toolchain = find_toolchain($toolchain_ver);
 if (!defined($toolchain) && !defined($opts{'t'})) {
@@ -694,15 +697,6 @@ if (defined($opts{'D'})) {
 	delete($arch_config{$arch}{'BR2_LINUX_KERNEL_DEFCONFIG'});
 }
 
-if (defined($opts{'F'})) {
-	my $fragments = $opts{'F'};
-
-	# BR wants fragment files to be separated by spaces
-	$fragments =~ s/,/ /g;
-	print("Linux config fragment(s): $fragments\n");
-	$generic_config{'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES'} = $fragments;
-}
-
 if (defined($opts{'j'})) {
 	my $jval = $opts{'j'};
 
@@ -725,6 +719,16 @@ if (defined($opts{'j'})) {
 	$generic_config{'BR2_JLEVEL'} = get_cores() + 1;
 }
 
+if (defined($opts{'l'})) {
+	print("Using ".$opts{'l'}." as Linux kernel repo...\n");
+	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'} = $opts{'l'};
+}
+
+if (defined($opts{'v'})) {
+	print("Using ".$opts{'v'}." as Linux kernel version...\n");
+	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
+}
+
 if (defined($local_linux)) {
 	print("Using $local_linux as Linux kernel directory...\n");
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
@@ -736,9 +740,12 @@ if (defined($local_linux)) {
 	}
 }
 
-if (defined($opts{'l'})) {
-	print("Using ".$opts{'l'}." as Linux kernel repo...\n");
-	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'} = $opts{'l'};
+if ($kernel_fragments ne '') {
+	# BR wants fragment files to be separated by spaces
+	$kernel_fragments =~ s/,/ /g;
+	print("Linux config fragment(s): $kernel_fragments\n");
+	$generic_config{'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES'} =
+		$kernel_fragments;
 }
 
 if (defined($opts{'t'})) {
@@ -762,11 +769,6 @@ $toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 # force it to create the symlinks again, so we are sure to use the toolchain
 # specified now.
 trigger_toolchain_sync($relative_outputdir, $arch);
-
-if (defined($opts{'v'})) {
-	print("Using ".$opts{'v'}." as Linux kernel version...\n");
-	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
-}
 
 $kernel_header_version = get_kernel_header_version($toolchain, $arch);
 if (defined($kernel_header_version)) {
