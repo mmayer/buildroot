@@ -35,8 +35,10 @@ use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
+use constant VERSION_FRAGMENT => qw(local_version.txt);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
 
+use constant SHA_LEN => 12;
 use constant SLEEP_TIME => 5;
 use constant STALE_THRESHOLD => 7 * 24 * 60 * 60; 	# days in seconds
 
@@ -384,6 +386,29 @@ sub get_kernel_header_version($$)
 	return [($version_code >> 16) & 0xff, ($version_code >> 8) & 0xff];
 }
 
+sub get_linux_sha($$$)
+{
+	my ($fragments, $fragment_dir, $cmd) = @_;
+
+	my $version_fragment = "$fragment_dir/".VERSION_FRAGMENT;
+	my $git_sha = `$cmd`;
+
+	chomp($git_sha);
+	if ($git_sha eq '') {
+		print("Couldn't determine SHA for kernel.\n".
+			"Was using \"$cmd\".\n");
+		unlink($version_fragment) if (-e $version_fragment);
+		return $fragments;
+	}
+	print("Local Linux kernel is version $git_sha...\n");
+	open(F, ">$version_fragment");
+	print(F "CONFIG_LOCALVERSION=\"-g$git_sha\"\n");
+	close(F);
+	$version_fragment .= "," if ($fragments ne '');
+
+	return $version_fragment.$fragments;
+}
+
 sub move_merged_config($$$$)
 {
 	my ($prg, $arch, $sname, $dname) = @_;
@@ -521,6 +546,7 @@ sub print_usage($)
 		"          -M <url>.....use <url> as BR mirror ('-' for none)\n".
 		"          -n...........do not use shared download cache\n".
 		"          -o <path>....use <path> as the BR output directory\n".
+		"          -S...........suppress using SHA in Linux version\n".
 		"          -T <verstr>..use this toolchain version\n".
 		"          -t <path>....use <path> as toolchain directory\n".
 		"          -v <tag>.....use <tag> as Linux version tag\n");
@@ -548,7 +574,7 @@ my $kernel_header_version;
 my $arch;
 my %opts;
 
-getopts('3:bcDd:F:f:ij:L:l:M:no:T:t:v:', \%opts);
+getopts('3:bcDd:F:f:ij:L:l:M:no:ST:t:v:', \%opts);
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -730,13 +756,60 @@ if (defined($opts{'v'})) {
 }
 
 if (defined($local_linux)) {
+	my $git_dir = "$local_linux/.git";
+
 	print("Using $local_linux as Linux kernel directory...\n");
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
 	write_localmk($prg, $relative_outputdir);
+	# Get the kernel GIT SHA locally if it's a GIT tree.
+	if (!defined($opts{'S'})) {
+		# If the .git entry is a file rather than a directory, it means
+		# we are dealing with a submodule. We handle that case first.
+		if (-f $git_dir) {
+			open(F, $git_dir);
+			while (<F>) {
+				chomp;
+				if (m|^gitdir:\s+(.*/linux$)|) {
+					$git_dir = $1;
+					last;
+				}
+			}
+			close(F);
+		}
+		if (-d $git_dir) {
+			my $git_cmd = "git --git-dir=\"$git_dir\" rev-parse ".
+				"--short=".SHA_LEN." HEAD";
+			$kernel_fragments = get_linux_sha($kernel_fragments,
+				$relative_outputdir, $git_cmd);
+		}
+	}
 } else {
 	# Delete our custom makefile, so we don't override the Linux directory.
 	if (-e "$br_outputdir/".AUTO_MK) {
 		unlink("$br_outputdir/".AUTO_MK);
+	}
+	# Determine the kernel GIT SHA remotely. The tree hasn't been cloned
+	# yet.
+	if (!defined($opts{'S'})) {
+		my $git_remote =
+			$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'};
+		my $git_branch =
+			$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
+		my $git_cmd = "git ls-remote \"$git_remote\" | ".
+			"grep \"refs/heads/$git_branch\$\" | ".
+			"awk '{ print \$1 }' | ".
+			"cut -c1-".SHA_LEN;
+		$kernel_fragments = get_linux_sha($kernel_fragments,
+			$relative_outputdir, $git_cmd);
+	}
+}
+
+# If requested, don't append GIT SHA to kernel version string. Primarily used
+# for release builds.
+if (defined($opts{'S'})) {
+	# Delete our Linux custom version fragment.
+	if (-e "$br_outputdir/".VERSION_FRAGMENT) {
+		unlink("$br_outputdir/".VERSION_FRAGMENT);
 	}
 }
 
