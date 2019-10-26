@@ -17,6 +17,12 @@ BINARY_DST	= $(BRCMSTB_RELEASE_DIR)/buildroot-$(VERSION)
 SRC_DST		= $(BRCMSTB_RELEASE_DIR)/src
 
 
+# Run "make brcmstb-release RELEASE=1" for official builds. If you do, the build
+# process won't add the kernel's GIT SHA to the Linux version number.
+ifeq ($(RELEASE),1)
+BR_CONFIG_RELEASE_FLAGS	= -S
+endif
+
 define BRCMSTB_HELP_CMDS
 	@echo '  brcmstb-tarball       - buildroot tar-ball w/o package sources'
 	@echo '  brcmstb-diffs         - BR diff files containing BRCM changes'
@@ -26,6 +32,7 @@ define BRCMSTB_HELP_CMDS
 	@echo '  brcmstb-<arch>        - build a single architecture'
 	@echo ''
 	@echo '  * this is the recommended target to generate a release'
+	@echo 'Pass RELEASE=1 as additional argument for official release builds.'
 endef
 
 BRCMSTB_NAME	= Broadcom STB
@@ -83,6 +90,7 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 		bin/br_config.pl \
 			-T $(TOOLCHAIN) \
 			-o $(BRCMSTB_OUTPUT_DIR) -i -n \
+			$(BR_CONFIG_RELEASE_FLAGS) \
 			-L misc/linux.master $${arch}; \
 		err=$$?; \
 		test $${err} = 0 || exit $${err}; \
