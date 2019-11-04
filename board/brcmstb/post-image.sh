@@ -27,7 +27,6 @@ linux_dir=`ls -drt ${BUILD_DIR}/linux-* | egrep 'linux-(stb|custom)' | head -1`
 arch=`basename "$output_path"`
 test "$arch" = "mips" && arch="bmips"
 
-rootfs_cpio="$image_path/rootfs.cpio"
 rootfs_tar="$image_path/rootfs.tar"
 nfs_tar="nfsroot-$arch.tar"
 
@@ -47,11 +46,6 @@ if [ -r "$kern_config" ]; then
 	mv "$tmp" "$kern_config"
 else
 	echo "WARNING: couldn't read $kern_config"
-fi
-
-if [ -r "$rootfs_cpio" ]; then
-	echo "Removing rootfs_cpio..."
-	rm "$rootfs_cpio"
 fi
 
 echo "Creating romfs staging area..."
