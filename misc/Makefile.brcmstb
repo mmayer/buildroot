@@ -96,7 +96,9 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 		test $${err} = 0 || exit $${err}; \
 	done
 	mkdir -p $(BINARY_DST)
-	cp -a $(BRCMSTB_OUTPUT_DIR)/*/images/* $(BINARY_DST)
+	# Ensure we don't copy any rootfs.cpio files (they would clash)
+	rsync -a $(BRCMSTB_OUTPUT_DIR)/*/images/ \
+		--exclude=rootfs.cpio $(BINARY_DST)
 	@echo "Adding downloaded sources to tar-ball..."
 	# We want to skip the GIT trees buildroot creates (e.g. dl/linux/git).
 	# Therefore, we exclude 'git' and 'git.readme'. If we ever wanted to
