@@ -31,6 +31,7 @@ use constant LOCAL_MK => qw(local.mk);
 use constant BR_MIRROR_HOST => qw(stbgit.broadcom.com);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
+use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
@@ -407,6 +408,35 @@ sub get_linux_sha($$$)
 	$version_fragment .= "," if ($fragments ne '');
 
 	return $version_fragment.$fragments;
+}
+
+sub merge_br_fragments($$$)
+{
+	my ($prg, $output_dir, $fragments) = @_;
+	my $out_frag = "$output_dir/".MERGED_FRAGMENT;
+	my $ret = $out_frag;
+
+	open(D, ">$out_frag");
+
+	foreach my $frag (split(/,/, $fragments)) {
+		print("Processing BR fragment $frag...\n");
+		if (!open(S, $frag)) {
+			print(STDERR "$prg: couldn't open $frag\n");
+			$ret = undef;
+			last;
+		}
+		while (my $line = <S>) {
+			chomp($line);
+			print(D "$line\n");
+		}
+		close(S);
+	}
+
+	close(D);
+
+	unlink($out_frag) if (!defined($ret));
+
+	return $ret;
 }
 
 sub move_merged_config($$$$)
@@ -928,12 +958,16 @@ write_config($toolchain_config{$arch}, $temp_config, 0);
 system("support/kconfig/merge_config.sh -m configs/brcmstb_defconfig ".
 	"\"$temp_config\"");
 if (defined($opts{'f'})) {
-	my $fragment_file = $opts{'f'};
+	my $fragment_file = merge_br_fragments($prg, $br_outputdir, $opts{'f'});
+
+	exit(1) if (!defined($fragment_file));
+
 	# Preserve the merged configuration from above and use it as the
 	# starting point.
 	rename('.config', $temp_config);
 	system("support/kconfig/merge_config.sh -m $temp_config ".
 		"\"$fragment_file\"");
+	unlink($fragment_file);
 }
 unlink($temp_config);
 move_merged_config($prg, $arch, ".config", "configs/$merged_config");
