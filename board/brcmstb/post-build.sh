@@ -5,6 +5,7 @@ set -e
 
 prg=`basename $0`
 custom_files="${BASE_DIR}/files"
+custom_script="${BASE_DIR}/scripts/${prg}"
 
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
@@ -151,4 +152,10 @@ fi
 echo "Copying supplemental files..."
 if [ -d "${custom_files}" ]; then
 	rsync -a "${custom_files}/" "${TARGET_DIR}"
+fi
+
+# Checking for custom post-build script
+if [ -x "${custom_script}" ]; then
+	echo "Executing ${custom_script}..."
+	"${custom_script}" "$@"
 fi

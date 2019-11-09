@@ -5,6 +5,7 @@
 #    option BR2_ROOTFS_POST_SCRIPT_ARGS
 
 prg=`basename $0`
+custom_script="${BASE_DIR}/scripts/${prg}"
 
 LINUX_STAMPS=".stamp_kconfig_fixup_done .stamp_built .stamp_target_installed"
 LINUX_STAMPS="$LINUX_STAMPS .stamp_images_installed .stamp_initramfs_rebuilt"
@@ -88,4 +89,10 @@ if [ "$arch" = "arm64" -o "$arch" = "bmips" ]; then
 	mv "$linux_image.norootfs.gz" "$image_path/vmlinuz-$arch"
 else
 	mv "$linux_image.norootfs" "$image_path/vmlinuz-$arch"
+fi
+
+# Checking for custom post-image script
+if [ -x "${custom_script}" ]; then
+	echo "Executing ${custom_script}..."
+	"${custom_script}" "$@"
 fi
