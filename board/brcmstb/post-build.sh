@@ -4,6 +4,7 @@ set -u
 set -e
 
 prg=`basename $0`
+custom_files="${BASE_DIR}/files"
 
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
@@ -147,7 +148,7 @@ else
 fi
 
 # Copy directory structure from ${BASE_DIR}/files to the target
-echo "Copying supplemental files"
-if [ -d "${BASE_DIR}/files" ]; then
-	cp -fpR ${BASE_DIR}/files/* ${TARGET_DIR}
+echo "Copying supplemental files..."
+if [ -d "${custom_files}" ]; then
+	rsync -a "${custom_files}/" "${TARGET_DIR}"
 fi
