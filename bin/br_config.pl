@@ -324,6 +324,29 @@ sub find_toolchain($)
 	return undef;
 }
 
+sub set_target_toolchain($$)
+{
+	my ($toolchain, $arch) = @_;
+	my $stbgcc = $toolchain;
+
+	# Keep only the last portion of the toolchain path. That's where we
+	# find the version number.
+	$stbgcc =~ s|.*/||;
+
+	if ($stbgcc =~ /(\w+)-(\d+).(\d+)-([\d\.]+)$/) {
+		my ($prefix, $major, $minor, $stb) = ($1, $2, $3, $4);
+		my $config_str = "BR2_TOOLCHAIN_EXTERNAL_GCC_$major";
+
+		print("Detected GCC $major ($major.$minor-$stb)...\n");
+		$toolchain_config{$arch}{$config_str} = 'y';
+	} else {
+		print("WARNING! Couldn't parse GCC version number. Build may ".
+			"fail.\n");
+		print("Toolchain: $toolchain\n");
+	}
+	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
+}
+
 sub trigger_toolchain_sync($$)
 {
 	my ($output_dir, $arch) = @_;
@@ -866,7 +889,7 @@ if ($recommended_toolchain ne '') {
 	sleep(SLEEP_TIME);
 }
 print("Using $toolchain as toolchain...\n");
-$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
+set_target_toolchain($toolchain, $arch);
 
 # The toolchain may have changed since we last configured Buildroot. We need to
 # force it to create the symlinks again, so we are sure to use the toolchain
