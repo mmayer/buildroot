@@ -159,3 +159,21 @@ if [ -x "${custom_script}" ]; then
 	echo "Executing ${custom_script}..."
 	"${custom_script}" "$@"
 fi
+
+# The diff command below may return an error code. We don't want to abort the
+# script if that happens. We want to handle the error case ourselves.
+set +e
+
+# Check if start-up files somehow got overwritten. It should never happen, but
+# we want to know at build time if it ever does.
+SKEL_VERSION=`grep default package/brcm-pm/Config.in | awk '{print $2}'`
+SKEL_PATH=`dirname ${TARGET_DIR}`/build/brcm-skel-${SKEL_VERSION}
+echo "Performing consistency check..."
+init_diff=`diff -u ${TARGET_DIR}/etc/inittab ${SKEL_PATH}/skel/etc/inittab`
+if [ $? != 0 ]; then
+	echo "Detected a potential problem with the start-up files."
+	echo "It is recommended to remove the output/<arch> directory and"
+	echo "rebuild from scratch."
+	echo "$init_diff"
+	exit 1
+fi
