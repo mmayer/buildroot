@@ -36,6 +36,14 @@ config BR2_ROOTFS_LIB_DIR
 
 if BR2_ARCH_IS_64
 
+config BR2_ROOTFS_RUNTIME32
+	bool "Install 32-bit runtime on 64-bit system"
+	help
+	  Install 32-bit libraries and the 32-bit shared library loader on a
+	  64-bit system, so it is possible to execute 32-bit applications.
+
+if BR2_ROOTFS_RUNTIME32
+
 config BR2_ROOTFS_LIB32_DIR
 	string "Name of directory for 32-bit libraries (e.g. lib or lib32)"
 	default "lib"
@@ -44,19 +52,14 @@ config BR2_ROOTFS_LIB32_DIR
 	  most often be "lib" or "lib32". This name will be used in the root
 	  directory (e.g. /lib) as well as the /usr directory (e.g. /usr/lib).
 
-config BR2_ROOTFS_RUNTIME32
-	bool "Install 32-bit runtime on 64-bit system"
-	help
-	  Install 32-bit libraries and the 32-bit shared library loader on a
-	  64-bit system, so it is possible to execute 32-bit applications.
-
 config BR2_ROOTFS_RUNTIME32_PATH
 	string "Path to the 32-bit run-time"
 	help
 	  Specifies the path to the 32-bit run-time that should be copied into
 	  the root file system.
 
-endif
+endif	# BR2_ROOTFS_RUNTIME32
+endif	# BR2_ARCH_IS_64
 
 if BR2_ROOTFS_SKELETON_CUSTOM
 
