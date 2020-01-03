@@ -46,6 +46,7 @@ if BR2_ROOTFS_RUNTIME32
 
 config BR2_ROOTFS_LIB32_DIR
 	string "Name of directory for 32-bit libraries (e.g. lib or lib32)"
+	default "lib32" if BR2_ROOTFS_LIB_DIR = "lib"
 	default "lib"
 	help
 	  The name of the directories where 32-bit libraries live. This will
