@@ -26,7 +26,6 @@ endchoice
 
 config BR2_ROOTFS_LIB_DIR
 	string "Name of system library directories (e.g. lib or lib64)"
-	default "lib64" if BR2_ARCH_IS_64
 	default "lib"
 	help
 	  The name of the directories where system libraries live. This will
