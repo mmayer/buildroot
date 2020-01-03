@@ -1017,16 +1017,20 @@ if ($is_64bit) {
 			`ls -d "$runtime_base/$arch64"*/sys*root 2>/dev/null`;
 		chomp($rt64_path);
 
-		# If "lib64" in the sys-root is a sym-link, we can't build a
-		# 64-bit rootfs with 32-bit support. (There's nowhere to put
-		# 32-bit libraries.)
+		print("Using $rt_path for 32-bit environment\n");
+		$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32'} = 'y';
+		$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32_PATH'} = $rt_path;
+
+		# Additional KConfig variables are derived from the value of
+		# BR2_ROOTFS_LIB_DIR in system/Config.in.
 		if (-l "$rt64_path/lib64") {
-			print("Aarch64 toolchain is not multi-lib enabled. ".
-				"Disabling 32-bit support.\n");
+			print("Found new toolchain using /lib and /lib32...\n");
+			$arch_config{$arch}{'BR2_ROOTFS_LIB_DIR'} = 'lib';
+
 		} else {
-			print("Using $rt_path for 32-bit environment\n");
-			$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32'} = 'y';
-			$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32_PATH'} = $rt_path;
+			print("Found traditional toolchain using /lib64 and ".
+				"/lib...\n");
+			$arch_config{$arch}{'BR2_ROOTFS_LIB_DIR'} = 'lib64';
 		}
 	}
 }
