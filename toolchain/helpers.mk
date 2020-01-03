@@ -27,6 +27,14 @@ copy_toolchain_lib_root = \
 				exit -1; \
 			fi; \
 		done; \
+	done; \
+	LIB32="$(TARGET_DIR)/$(BR2_ROOTFS_LIB32_DIR)"; \
+	USR_LIB32="$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB32_DIR)"; \
+	for d in "$${LIB32}" "$${USR_LIB32}"; do \
+		if [ ! -d "$${d}" ]; then \
+			echo "Creating $${d}"; \
+			mkdir -p "$${d}"; \
+		fi; \
 	done
 
 #
@@ -135,7 +143,8 @@ copy_toolchain_sysroot = \
 			$(call simplify_symlink,$$i,$(STAGING_DIR)) ; \
 		done ; \
 	fi ; \
-	if [ ! -e $(STAGING_DIR)/lib/ld*.so.* ]; then \
+	ld_count=`ls $(STAGING_DIR)/lib/ld*.so.* 2>/dev/null | wc -l` ; \
+	if [ "$${ld_count}" = "0" ]; then \
 		if [ -e $${ARCH_SYSROOT_DIR}/lib/ld*.so.* ]; then \
 			cp -a $${ARCH_SYSROOT_DIR}/lib/ld*.so.* $(STAGING_DIR)/lib/ ; \
 		fi ; \

@@ -453,8 +453,17 @@ define TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS
 	$(call copy_toolchain_sysroot,$${SYSROOT_DIR},$${ARCH_SYSROOT_DIR},$${ARCH_SUBDIR},$${ARCH_LIB_DIR},$${SUPPORT_LIB_DIR}); \
 	if [ "$(BR2_ROOTFS_RUNTIME32)" = "y" ]; then \
 		$(call MESSAGE,"Copying external toolchain 32-bit libraries to staging...") ; \
-		mkdir -p "$${STAGING_DIR}/$(BR2_ROOTFS_LIB32_DIR)"; \
-		rsync -a --exclude '*.a' "$(BR2_ROOTFS_RUNTIME32_PATH)/$(BR2_ROOTFS_LIB32_DIR)" "$${STAGING_DIR}"; \
+		mkdir -p "$${STAGING_DIR}/$(BR2_ROOTFS_LIB32_DIR)" \
+			"$${STAGING_DIR}/usr/$(BR2_ROOTFS_LIB32_DIR)"; \
+		rsync -a --exclude '*.a' "$(BR2_ROOTFS_RUNTIME32_PATH)/lib/" \
+			"$${STAGING_DIR}/$(BR2_ROOTFS_LIB32_DIR)"; \
+		if [ "$(BR2_ROOTFS_LIB32_DIR)" != "lib" ]; then \
+			ldso_32=`ls $${STAGING_DIR}/$(BR2_ROOTFS_LIB32_DIR)/ld-linux*.so*`; \
+			ldso_32=`basename "$${ldso_32}"`; \
+			echo "Creating symlink for $${ldso_32}"; \
+			ln -snf "../$(BR2_ROOTFS_LIB32_DIR)/$${ldso_32}" \
+				"$${STAGING_DIR}/lib/$${ldso_32}"; \
+		fi; \
 	fi
 endef
 
