@@ -4,6 +4,7 @@ set -u
 set -e
 
 prg=`basename $0`
+board_dir=`dirname $0`
 custom_files="${BASE_DIR}/files"
 custom_script="${BASE_DIR}/scripts/${prg}"
 
@@ -27,11 +28,11 @@ if [ -e ${TARGET_DIR}/etc/inittab ]; then
 		${TARGET_DIR}/etc/inittab
 fi
 
-if ls board/brcmstb/dropbear_*_host_key >/dev/null 2>&1; then
+if ls ${board_dir}/dropbear_*_host_key >/dev/null 2>&1; then
 	echo "Installing pre-generated SSH keys..."
 	rm -rf ${TARGET_DIR}/etc/dropbear
 	mkdir -p ${TARGET_DIR}/etc/dropbear
-	for key in board/brcmstb/dropbear_*_host_key; do
+	for key in ${board_dir}/dropbear_*_host_key; do
 		b=`basename "${key}"`
 		echo "    ${b}"
 		install -D -p -m 0600 -t ${TARGET_DIR}/etc/dropbear ${key}
@@ -47,12 +48,12 @@ fi
 
 # Add SSH key for root
 sshdir="${TARGET_DIR}/root/.ssh"
-if [ -r board/brcmstb/brcmstb_root ]; then
+if [ -r ${board_dir}/brcmstb_root ]; then
 	echo "Installing SSH key for root..."
 	rm -rf "${sshdir}"
 	mkdir "${sshdir}"
 	chmod go= "${sshdir}"
-	cp board/brcmstb/brcmstb_root.pub "${sshdir}/authorized_keys"
+	cp ${board_dir}/brcmstb_root.pub "${sshdir}/authorized_keys"
 fi
 
 # Create mount points
