@@ -483,8 +483,16 @@ create_lib_symlinks = \
 	fi
 
 else
+ifeq ($(BR2_ROOTFS_LIB64_LINK),"")
 create_lib_symlinks = \
-	@echo "BR2_ROOTFS_RUNTIME32 is set, skipping lib symlinks creation"
+	$(Q)echo "Skipping lib symlinks (see BR2_ROOTFS_RUNTIME32, BR2_ROOTFS_LIB64_LINK)"
+else
+create_lib_symlinks = \
+	$(Q)DESTDIR="$(strip $1)" ; \
+	echo "Creating $(BR2_ROOTFS_LIB64_LINK) -> $(BR2_ROOTFS_LIB_DIR) symlinks"; \
+	ln -snf $(BR2_ROOTFS_LIB_DIR) "$${DESTDIR}/$(BR2_ROOTFS_LIB64_LINK)"; \
+	ln -snf $(BR2_ROOTFS_LIB_DIR) "$${DESTDIR}/usr/$(BR2_ROOTFS_LIB64_LINK)"
+endif
 endif
 
 define TOOLCHAIN_EXTERNAL_CREATE_STAGING_LIB_SYMLINK
