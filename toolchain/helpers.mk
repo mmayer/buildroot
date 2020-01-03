@@ -27,6 +27,14 @@ copy_toolchain_lib_root = \
 				exit -1; \
 			fi; \
 		done; \
+	done; \
+	LIB32="$(TARGET_DIR)/$(BR2_ROOTFS_LIB32_DIR)"; \
+	USR_LIB32="$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB32_DIR)"; \
+	for d in "$${LIB32}" "$${USR_LIB32}"; do \
+		if [ ! -d "$${d}" ]; then \
+			echo "Creating $${d}"; \
+			mkdir -p "$${d}"; \
+		fi; \
 	done
 
 #
