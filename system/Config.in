@@ -44,6 +44,14 @@ config BR2_ROOTFS_RUNTIME32
 
 if BR2_ROOTFS_RUNTIME32
 
+config BR2_ROOTFS_LIB64_LINK
+	string "Optional symlink to the 64-bit library location"
+	default "lib64" if BR2_ROOTFS_LIB_DIR = "lib"
+	help
+	  The name an optional symlink for the 64-bit library location. If this
+	  variable is non-empty a symlink BR2_ROOTFS_LIB64_LINK -> ARCH_LIB_DIR
+	  will be created (e.g. /lib64 -> lib).
+
 config BR2_ROOTFS_LIB32_DIR
 	string "Name of directory for 32-bit libraries (e.g. lib or lib32)"
 	default "lib32" if BR2_ROOTFS_LIB_DIR = "lib"
