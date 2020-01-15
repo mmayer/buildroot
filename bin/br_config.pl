@@ -42,6 +42,7 @@ use constant VERSION_H => qw(/usr/include/linux/version.h);
 use constant SHA_LEN => 12;
 use constant SLEEP_TIME => 5;
 use constant STALE_THRESHOLD => 7 * 24 * 60 * 60; 	# days in seconds
+use constant WORLD_PERMS => (S_IRWXG | S_IRWXO);
 
 my %compiler_map = (
 	'arm64' => 'aarch64-linux-gcc',
@@ -124,14 +125,22 @@ sub fix_oss_permissions($);
 sub fix_oss_permissions($)
 {
 	my ($dir) = @_;
-	my $mode = (stat($dir))[2] & 0777;
+	my @st = stat($dir);
+	my $mode = $st[2] & 0777;
+	my $fuid = $st[4];
+	my $uid = $>;
 	my $dh;
 
 	# If directory doesn't have rwx permissions for group and other, we
 	# add them. We silently fail if the attempt is denied, since there is
 	# nothing more we can do.
-	if (($mode & (S_IRWXG | S_IRWXO)) != (S_IRWXG | S_IRWXO)) {
+	if ($uid == $fuid && (($mode & WORLD_PERMS) != WORLD_PERMS)) {
 		chmod(0777, $dir) && print("Fixed permissions of $dir...\n");
+		print("Setting ACL for $dir...\n");
+		system("setfacl -m default:user::rwx $dir");
+		system("setfacl -m default:group::rwx $dir");
+		system("setfacl -m default:other::rwx $dir");
+		system("setfacl -m default:mask::rwx $dir");
 	}
 	opendir($dh, $dir);
 	while (my $entry = readdir($dh)) {
@@ -766,6 +775,11 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 				"$prg: couldn't create $br_oss_cache -- $!\n");
 		} else {
 			chmod(0777, $br_oss_cache);
+			# Setting the default UMASK to world-writable.
+			system("setfacl -m default:user::rwx $br_oss_cache");
+			system("setfacl -m default:group::rwx $br_oss_cache");
+			system("setfacl -m default:other::rwx $br_oss_cache");
+			system("setfacl -m default:mask::rwx $br_oss_cache");
 		}
 	}
 
