@@ -178,6 +178,41 @@ $(eval $(autotools-package))
 #### Below follows the host portion of the GLIBC package ####
 #############################################################
 
+#### Make functions taken from the Linux kernel ####
+
+# try-run
+# Usage: option = $(call try-run, $(CC)...-o "$$TMP",option-ok,otherwise)
+# Exit code chooses option. "$$TMP" serves as a temporary file and is
+# automatically cleaned up.
+try-run = $(shell set -e;		\
+	TMP="$(TMPOUT).$$$$.tmp";	\
+	TMPO="$(TMPOUT).$$$$.o";	\
+	if ($(1)) >/dev/null 2>&1;	\
+	then echo "$(2)";		\
+	else echo "$(3)";		\
+	fi;				\
+	rm -f "$$TMP" "$$TMPO")
+
+# __cc-option
+# Usage: MY_CFLAGS += $(call __cc-option,$(CC),$(MY_CFLAGS),-march=winchip-c6,-march=i586)
+__cc-option = $(call try-run,\
+	$(1) -Werror $(2) $(3) -c -x c /dev/null -o "$$TMP",$(3),$(4))
+
+# Do not attempt to build with gcc plugins during cc-option tests.
+# (And this uses delayed resolution so the flags will be up to date.)
+CC_OPTION_CFLAGS = $(filter-out $(GCC_PLUGINS_CFLAGS),$(KBUILD_CFLAGS))
+
+# cc-option
+# Usage: cflags-y += $(call cc-option,-march=winchip-c6,-march=i586)
+cc-option = $(call __cc-option, $(CC),$(CC_OPTION_CFLAGS),$(1),$(2))
+
+# cc-option-yn
+# Usage: flag := $(call cc-option-yn,-march=winchip-c6)
+cc-option-yn = $(call try-run,\
+	$(CC) -Werror $(KBUILD_CPPFLAGS) $(CC_OPTION_CFLAGS) $(1) -c -x c /dev/null -o "$$TMP",y,n)
+
+#### End of Linux code ####
+
 # TODO: We may want to consider using host-make to build GLIBC, since it
 # requires at least GNU Make 4.0. However, there are also other minimum
 # requirements that make Ubuntu 16.04 and 14.04 unsuitable to build GLIBC.
@@ -197,6 +232,11 @@ endef
 
 HOST_GLIBC_POST_PATCH_HOOKS += HOST_GLIBC_APPLY_PATCHES
 
+# Regarding GLIBC and --enable-cet, see https://tinyurl.com/tnycxev.
+ifeq ($(call cc-option-yn,-fcf-protection),y)
+HOST_GLIBC_ENABLE_CET = --enable-cet
+endif
+
 define HOST_GLIBC_CONFIGURE_CMDS
 	mkdir -p $(@D)/build
 	# Do the configuration
@@ -206,6 +246,7 @@ define HOST_GLIBC_CONFIGURE_CMDS
 		CXXFLAGS="-O2 $(GLIBC_EXTRA_CFLAGS)" \
 		$(SHELL) $(@D)/configure \
 		--prefix=/usr \
+		$(HOST_GLIBC_ENABLE_CET) \
 		--enable-shared \
 		--with-pkgversion="Buildroot" \
 		--without-cvs \
