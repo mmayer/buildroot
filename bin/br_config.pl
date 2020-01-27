@@ -1039,13 +1039,13 @@ if ($is_64bit) {
 		# BR2_ROOTFS_LIB_DIR in system/Config.in.
 		if (-l "$rt64_path/lib64") {
 			print("Found new toolchain using /lib and /lib32...\n");
-			$arch_config{$arch}{'BR2_ROOTFS_LIB_DIR'} = 'lib';
 
 		} else {
 			print("Found traditional toolchain using /lib64 and ".
 				"/lib...\n");
-			$arch_config{$arch}{'BR2_ROOTFS_LIB_DIR'} = 'lib64';
+			$arch_config{$arch}{'BR2_NEED_LD_SO_CONF'} = 'y';
 		}
+		print("Root file system will use /lib and /lib32...\n");
 	}
 }
 
