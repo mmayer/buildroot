@@ -8,6 +8,11 @@ board_dir=`dirname $0`
 custom_files="${BASE_DIR}/files"
 custom_script="${BASE_DIR}/scripts/${prg}"
 
+image_path="$1"
+# The output directory is one level up from the image directory.
+output_path=`dirname "$image_path"`
+dot_config="${output_path}/.config"
+
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
 
@@ -126,6 +131,15 @@ EOF
 if [ -x bin/find_64bit_libs.sh -a ! -h ${TARGET_DIR}/lib64 ]; then
 	echo "Checking that shared libraries were installed properly..."
 	bin/find_64bit_libs.sh "${TARGET_DIR}"
+fi
+
+if grep 'BR2_NEED_LD_SO_CONF=y' "${dot_config}" >/dev/null; then
+	echo "Copying ${board_dir}/ld.so.conf..."
+	cp -p "${board_dir}/ld.so.conf" ${TARGET_DIR}/etc
+	echo "Copying ldconfig..."
+	cp -p ${HOST_DIR}/*gnu*/sysroot/sbin/ldconfig ${TARGET_DIR}/sbin
+	echo "Running host-ldconfig..."
+	./bin/ldconfig -r ${TARGET_DIR}
 fi
 
 # BR_SKIP_LEGAL_INFO permits a developer to skip the "make legal-info" stage to
