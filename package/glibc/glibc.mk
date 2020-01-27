@@ -187,3 +187,75 @@ define GLIBC_INSTALL_TARGET_CMDS
 endef
 
 $(eval $(autotools-package))
+
+
+#############################################################
+#### Below follows the host portion of the GLIBC package ####
+#############################################################
+
+# TODO: We may want to consider using host-make to build GLIBC, since it
+# requires at least GNU Make 4.0. However, there are also other minimum
+# requirements that make Ubuntu 16.04 and 14.04 unsuitable to build GLIBC.
+#HOST_GLIBC_DEPENDENCIES = host-make
+
+# We want host-ldconfig to read ARM & Aarch64 files in addition to x86.
+HOST_GLIBC_PATCHES = \
+	0001-elf-readelflib.c-introduce-SKIP_READELF_INCLUDE.patch \
+	0002-i386-readelflib.c-add-support-for-ARM-libraries.patch
+
+define HOST_GLIBC_APPLY_PATCHES
+	$(Q)for p in $(HOST_GLIBC_PATCHES); do \
+		echo "Applying $${p}..."; \
+		$(APPLY_PATCHES) $(@D) package/glibc $${p}; \
+	done
+endef
+
+HOST_GLIBC_POST_PATCH_HOOKS += HOST_GLIBC_APPLY_PATCHES
+
+define HOST_GLIBC_CONFIGURE_CMDS
+	mkdir -p $(@D)/build
+	# Do the configuration
+	(cd $(@D)/build; \
+		$(HOST_CONFIGURE_OPTS) \
+		CFLAGS="-O2 $(GLIBC_EXTRA_CFLAGS)" CPPFLAGS="" \
+		CXXFLAGS="-O2 $(GLIBC_EXTRA_CFLAGS)" \
+		$(SHELL) $(@D)/configure \
+		--prefix=/usr \
+		--enable-shared \
+		--with-pkgversion="Buildroot" \
+		--without-cvs \
+		--disable-profile \
+		--without-gd \
+		--enable-obsolete-rpc)
+endef
+
+#
+# TODO: Reducing the binaries we build requires further investigation. Leaving
+# this here for now as starting point for future research.
+#
+# We only want ldconfig. Limited number of build targets for the host to save
+# compilation time.
+#HOST_GLIBC_TARGETS= csu iconv locale localedata iconvdata assert ctype intl \
+#	catgets math setjmp signal stdlib stdio-common libio dlfcn nptl \
+#	malloc string wcsmbs timezone time dirent grp pwd posix io termios \
+#	resource misc socket sysvipc gmon gnulib wctype manual shadow \
+#	gshadow po argp rt conform debug mathvec support crypt nptl_db inet \
+#	resolv nss hesiod sunrpc nis nscd login elf
+#
+#define HOST_GLIBC_BUILD_CMDS
+#	$(Q)for t in $(HOST_GLIBC_TARGETS); do \
+#		echo "Building $${t}..."; \
+#		$(MAKE) objdir=$(@D)/build \
+#			-C $(@D)/$${t} subdir=$${t} ..=../ subdir_lib; \
+#	done
+#endef
+
+define HOST_GLIBC_BUILD_CMDS
+	$(MAKE) -j $(BR2_JLEVEL) -C $(@D)/build
+endef
+
+define HOST_GLIBC_INSTALL_CMDS
+	install -p -m 0755 $(@D)/build/elf/ldconfig $(HOST_DIR)/sbin
+endef
+
+$(eval $(host-autotools-package))
