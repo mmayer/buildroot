@@ -66,6 +66,15 @@ config BR2_ROOTFS_RUNTIME32_PATH
 	  Specifies the path to the 32-bit run-time that should be copied into
 	  the root file system.
 
+config BR2_NEED_LD_SO_CONF
+	bool "ld.so.conf is required by the root file system"
+	help
+	  Indicates whether the 64-bit system needs ld.so.conf to execute 32-bit
+	  binaries.
+
+	  Say 'y' if you have a traditional Broadcom STB toolchain that uses
+	  /lib64 for 64-bit shared libraries.
+
 endif	# BR2_ROOTFS_RUNTIME32
 endif	# BR2_ARCH_IS_64
 
