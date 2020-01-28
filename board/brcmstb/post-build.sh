@@ -126,13 +126,6 @@ PLAT=$arch
 VERSION=$linux_ver
 EOF
 
-# Check that shared libraries were installed properly. lib64 can't be a
-# symlink, though. If it is a symlink, there's nothing to check anyway.
-if [ -x bin/find_64bit_libs.sh -a ! -h ${TARGET_DIR}/lib64 ]; then
-	echo "Checking that shared libraries were installed properly..."
-	bin/find_64bit_libs.sh "${TARGET_DIR}"
-fi
-
 if grep 'BR2_NEED_LD_SO_CONF=y' "${dot_config}" >/dev/null; then
 	echo "Copying ${board_dir}/ld.so.conf..."
 	cp -p "${board_dir}/ld.so.conf" ${TARGET_DIR}/etc
