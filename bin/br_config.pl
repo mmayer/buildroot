@@ -28,6 +28,9 @@ use Socket;
 
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
+use constant BR_FRAG_FILE => qw(br_fragments.cfg);
+use constant KERNEL_FRAG_FILE => qw(k_fragments.cfg);
+
 use constant BR_MIRROR_HOST => qw(stbgit.broadcom.com);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
@@ -457,6 +460,37 @@ sub get_linux_sha($$$)
 	return $version_fragment.$fragments;
 }
 
+sub parse_cmdline_fragments($$)
+{
+	my ($out_file, $frag_str) = @_;
+	my @frags = split(/;/, $frag_str);
+
+	return '' if ($frag_str eq '');
+
+	printf("Generating temporary fragment file $out_file...\n");
+
+	# This function strips white space and quotes around fragments, as it is
+	# fairly easy to end up with extra quotes or spaces when passing config
+	# fragments on the command line. (They may have to be escaped from the
+	# shell, after all.)
+
+	open(F, ">$out_file");
+	foreach my $frag (@frags) {
+		# Strip leading and trailing whitespace.
+		$frag =~ s/^\s+//;
+		$frag =~ s/\s+$//;
+		if ($frag =~ /^["']/) {
+			# Strip quotes around the entire fragment. Make sure the
+			# quote at the end is the same as at the beginning.
+			$frag =~ s/^(["'])(.*)\1$/$2/;
+		}
+		print(F "$frag\n");
+	}
+	close(F);
+
+	return $out_file;
+}
+
 sub merge_br_fragments($$$)
 {
 	my ($prg, $output_dir, $fragments) = @_;
@@ -624,6 +658,8 @@ sub print_usage($)
 		"          -M <url>.....use <url> as BR mirror ('-' for none)\n".
 		"          -n...........do not use shared download cache\n".
 		"          -o <path>....use <path> as the BR output directory\n".
+		"          -R <str>.....use <str> as kernel fragment(s)\n".
+		"          -r <str>.....use <str> as BR fragments\n".
 		"          -S...........suppress using SHA in Linux version\n".
 		"          -T <verstr>..use this toolchain version\n".
 		"          -t <path>....use <path> as toolchain directory\n".
@@ -643,6 +679,7 @@ my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
+my $inline_kernel_frag_file;
 my $kernel_frag_files;
 my $local_linux;
 my $toolchain;
@@ -652,7 +689,7 @@ my $kernel_header_version;
 my $arch;
 my %opts;
 
-getopts('3:bcDd:F:f:ij:L:l:M:no:ST:t:v:', \%opts);
+getopts('3:bcDd:F:f:ij:L:l:M:no:R:r:ST:t:v:', \%opts);
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -919,6 +956,20 @@ if (defined($local_linux)) {
 	}
 }
 
+$inline_kernel_frag_file = $relative_outputdir."/".KERNEL_FRAG_FILE;
+if (defined($opts{'R'})) {
+	my $frag_file = parse_cmdline_fragments($inline_kernel_frag_file,
+		$opts{'R'});
+
+	if ($frag_file ne '') {
+		$kernel_frag_files .= ' ' if ($kernel_frag_files ne '');
+		$kernel_frag_files .= $frag_file;
+	}
+} else {
+	# Keep things clean. Remove the frag file if we don't need it.
+	unlink($inline_kernel_frag_file) if (-e $inline_kernel_frag_file);
+}
+
 # If requested, don't append GIT SHA to kernel version string. Primarily used
 # for release builds.
 if (defined($opts{'S'})) {
@@ -1066,6 +1117,19 @@ if (defined($opts{'f'})) {
 	system("support/kconfig/merge_config.sh -m $temp_config ".
 		"\"$fragment_file\"");
 	unlink($fragment_file);
+}
+if (defined($opts{'r'})) {
+	my $f = $relative_outputdir."/".BR_FRAG_FILE;
+	my $fragment_file = parse_cmdline_fragments($f, $opts{'r'});
+
+	if ($fragment_file ne '') {
+		# Preserve the merged configuration from above and use it as the
+		# starting point.
+		rename('.config', $temp_config);
+		system("support/kconfig/merge_config.sh -m $temp_config ".
+			"\"$fragment_file\"");
+		unlink($fragment_file);
+	}
 }
 unlink($temp_config);
 move_merged_config($prg, $arch, ".config", "configs/$merged_config");
