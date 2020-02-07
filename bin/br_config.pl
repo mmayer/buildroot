@@ -615,7 +615,7 @@ sub print_usage($)
 		"          -c...........clean (remove output/\$platform)\n".
 		"          -D...........use platform's default kernel config\n".
 		"          -d <fname>...use <fname> as kernel defconfig\n".
-		"          -F <fname>...use <fname> as kernel fragment(s)\n".
+		"          -F <fname>...use <fname> as kernel fragment file\n".
 		"          -f <fname>...use <fname> as BR fragment file\n".
 		"          -i...........like -b, but also build FS images\n".
 		"          -j <jobs>....run <jobs> parallel build jobs\n".
@@ -643,7 +643,7 @@ my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
-my $kernel_fragments;
+my $kernel_frag_files;
 my $local_linux;
 my $toolchain;
 my $toolchain_ver;
@@ -743,7 +743,7 @@ if (defined($opts{'c'})) {
 	exit($status);
 }
 
-$kernel_fragments = $opts{'F'} || '';
+$kernel_frag_files = $opts{'F'} || '';
 
 $toolchain_ver = $opts{'T'} || '';
 if ($toolchain_ver eq '' && !defined($opts{'t'})) {
@@ -894,7 +894,7 @@ if (defined($local_linux)) {
 		if (-d $git_dir) {
 			my $git_cmd = "git --git-dir=\"$git_dir\" rev-parse ".
 				"--short=".SHA_LEN." HEAD";
-			$kernel_fragments = get_linux_sha($kernel_fragments,
+			$kernel_frag_files = get_linux_sha($kernel_frag_files,
 				$relative_outputdir, $git_cmd);
 		}
 	}
@@ -914,7 +914,7 @@ if (defined($local_linux)) {
 			"grep \"refs/heads/$git_branch\$\" | ".
 			"awk '{ print \$1 }' | ".
 			"cut -c1-".SHA_LEN;
-		$kernel_fragments = get_linux_sha($kernel_fragments,
+		$kernel_frag_files = get_linux_sha($kernel_frag_files,
 			$relative_outputdir, $git_cmd);
 	}
 }
@@ -928,12 +928,12 @@ if (defined($opts{'S'})) {
 	}
 }
 
-if ($kernel_fragments ne '') {
+if ($kernel_frag_files ne '') {
 	# BR wants fragment files to be separated by spaces
-	$kernel_fragments =~ s/,/ /g;
-	print("Linux config fragment(s): $kernel_fragments\n");
+	$kernel_frag_files =~ s/,/ /g;
+	print("Linux config fragment file(s): $kernel_frag_files\n");
 	$generic_config{'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES'} =
-		$kernel_fragments;
+		$kernel_frag_files;
 }
 
 if (defined($opts{'t'})) {
