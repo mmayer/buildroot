@@ -85,12 +85,29 @@ linux-diffs:
 
 brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	@if [ "$(VERSION)" = "" ]; then exit 1; fi
+	FRAG='output/cmatool.cfg'; \
 	unset BR_SKIP_LEGAL_INFO; \
 	for arch in `bin/get_archs.pl $(STB_VERSION)`; do \
+		extra=""; \
+		l="misc/linux.master"; \
+		a="$${l}/arch/$${arch}"; \
+		i="$${l}/include/linux"; \
+		if [ -d "$${l}" ]; then \
+			if [ ! -e "$${a}/configs/brcmstb_defconfig" ]; then \
+				echo "Using default defconfig for $${arch}."; \
+				extra="-D"; \
+			fi; \
+			if [ ! -e "$${i}/brcmstb/cma_driver.h" ]; then \
+				echo "Turning off CMATOOL for $${arch}."; \
+				echo '# BR2_PACKAGE_CMATOOL is not set' \
+					>"$${FRAG}"; \
+				extra="$${extra} -f $${FRAG}"; \
+			fi; \
+		fi; \
 		bin/br_config.pl \
 			-T $(TOOLCHAIN) \
 			-o $(BRCMSTB_OUTPUT_DIR) -i -n \
-			$(BR_CONFIG_RELEASE_FLAGS) \
+			$(BR_CONFIG_RELEASE_FLAGS) $${extra} \
 			-L misc/linux.master $${arch}; \
 		err=$$?; \
 		test $${err} = 0 || exit $${err}; \
