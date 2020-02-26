@@ -1,8 +1,11 @@
 BRCMSTB_OUTPUT_DIR	?= output
 BRCMSTB_RELEASE_DIR	= $(BRCMSTB_OUTPUT_DIR)/release
 
-VERSION			:= $(shell bin/linuxver.sh -q misc/linux.master)
-DOTVERSION		:= $(shell bin/linuxver.sh -dq misc/linux.master)
+BRCMSTB_LINUX_DIR	:= misc/linux.master
+FRAG_FILE		:= output/release_frag.cfg
+
+VERSION			:= $(shell bin/linuxver.sh -q $(BRCMSTB_LINUX_DIR))
+DOTVERSION		:= $(shell bin/linuxver.sh -dq $(BRCMSTB_LINUX_DIR))
 
 TOOLCHAIN		:= $(shell cat misc/toolchain.master 2>/dev/null || \
 				cat misc/toolchain)
@@ -82,18 +85,16 @@ linux-release:
 linux-diffs:
 	@echo "Generating Linux diffs..."
 	test -d $(SRC_DST) || mkdir -p $(SRC_DST)
-	bin/makedelta.pl misc/linux.master $(SRC_DST)
+	bin/makedelta.pl $(BRCMSTB_LINUX_DIR) $(SRC_DST)
 
 brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	@if [ "$(VERSION)" = "" ]; then exit 1; fi
-	FRAG='output/cmatool.cfg'; \
 	unset BR_SKIP_LEGAL_INFO; \
 	for arch in `bin/get_archs.pl $(STB_VERSION)`; do \
 		extra=""; \
-		l="misc/linux.master"; \
-		a="$${l}/arch/$${arch}"; \
-		i="$${l}/include/linux"; \
-		if [ -d "$${l}" ]; then \
+		a="$(BRCMSTB_LINUX_DIR)/arch/$${arch}"; \
+		i="$(BRCMSTB_LINUX_DIR)/include/linux"; \
+		if [ -d "$(BRCMSTB_LINUX_DIR)" ]; then \
 			if [ ! -e "$${a}/configs/brcmstb_defconfig" ]; then \
 				echo "Using default defconfig for $${arch}."; \
 				extra="-D"; \
@@ -101,15 +102,15 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 			if [ ! -e "$${i}/brcmstb/cma_driver.h" ]; then \
 				echo "Turning off CMATOOL for $${arch}."; \
 				echo '# BR2_PACKAGE_CMATOOL is not set' \
-					>"$${FRAG}"; \
-				extra="$${extra} -f $${FRAG}"; \
+					>"$(FRAG_FILE)"; \
+				extra="$${extra} -f $(FRAG_FILE)"; \
 			fi; \
 		fi; \
 		bin/br_config.pl \
 			-T $(TOOLCHAIN) \
 			-o $(BRCMSTB_OUTPUT_DIR) -i -n \
 			$(BR_CONFIG_RELEASE_FLAGS) $${extra} \
-			-L misc/linux.master $${arch}; \
+			-L $(BRCMSTB_LINUX_DIR) $${arch}; \
 		err=$$?; \
 		test $${err} = 0 || exit $${err}; \
 	done
