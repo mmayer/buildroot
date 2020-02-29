@@ -460,6 +460,49 @@ sub get_linux_sha($$$)
 	return $version_fragment.$fragments;
 }
 
+sub get_linux_sha_local($$$)
+{
+	my ($fragments, $fragment_dir, $linux_dir) = @_;
+	my $git_dir = "$linux_dir/.git";
+
+	# If the .git entry is a file rather than a directory, it means
+	# we are dealing with a submodule. We handle that case first.
+	if (-f $git_dir) {
+		open(F, $git_dir);
+		while (<F>) {
+			chomp;
+			if (m|^gitdir:\s+(.*/linux$)|) {
+				$git_dir = $1;
+				last;
+			}
+		}
+		close(F);
+	}
+	if (-d $git_dir) {
+		my $git_cmd = "git --git-dir=\"$git_dir\" rev-parse ".
+			"--short=".SHA_LEN." HEAD";
+		$fragments = get_linux_sha($fragments, $fragment_dir, $git_cmd);
+	}
+
+	return $fragments;
+}
+
+sub get_linux_sha_remote($$)
+{
+	my ($fragments, $fragment_dir) = @_;
+
+	my $git_remote =
+		$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'};
+	my $git_branch =
+		$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
+	my $git_cmd = "git ls-remote \"$git_remote\" | ".
+			"grep \"refs/heads/$git_branch\$\" | ".
+			"awk '{ print \$1 }' | ".
+			"cut -c1-".SHA_LEN;
+
+	return get_linux_sha($fragments, $fragment_dir, $git_cmd);
+}
+
 sub parse_cmdline_fragments($$)
 {
 	my ($out_file, $frag_str) = @_;
@@ -896,8 +939,6 @@ if (defined($opts{'v'})) {
 }
 
 if (defined($local_linux)) {
-	my $git_dir = "$local_linux/.git";
-
 	print("Using $local_linux as Linux kernel directory...\n");
 	if (!-d $local_linux) {
 		print(STDERR "$prg: Linux directory $local_linux doesn't exist\n");
@@ -915,25 +956,8 @@ if (defined($local_linux)) {
 	write_localmk($prg, $relative_outputdir);
 	# Get the kernel GIT SHA locally if it's a GIT tree.
 	if (!defined($opts{'S'})) {
-		# If the .git entry is a file rather than a directory, it means
-		# we are dealing with a submodule. We handle that case first.
-		if (-f $git_dir) {
-			open(F, $git_dir);
-			while (<F>) {
-				chomp;
-				if (m|^gitdir:\s+(.*/linux$)|) {
-					$git_dir = $1;
-					last;
-				}
-			}
-			close(F);
-		}
-		if (-d $git_dir) {
-			my $git_cmd = "git --git-dir=\"$git_dir\" rev-parse ".
-				"--short=".SHA_LEN." HEAD";
-			$kernel_frag_files = get_linux_sha($kernel_frag_files,
-				$relative_outputdir, $git_cmd);
-		}
+		$kernel_frag_files = get_linux_sha_local($kernel_frag_files,
+				$relative_outputdir, $local_linux);
 	}
 } else {
 	# Delete our custom makefile, so we don't override the Linux directory.
@@ -943,16 +967,8 @@ if (defined($local_linux)) {
 	# Determine the kernel GIT SHA remotely. The tree hasn't been cloned
 	# yet.
 	if (!defined($opts{'S'})) {
-		my $git_remote =
-			$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'};
-		my $git_branch =
-			$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
-		my $git_cmd = "git ls-remote \"$git_remote\" | ".
-			"grep \"refs/heads/$git_branch\$\" | ".
-			"awk '{ print \$1 }' | ".
-			"cut -c1-".SHA_LEN;
-		$kernel_frag_files = get_linux_sha($kernel_frag_files,
-			$relative_outputdir, $git_cmd);
+		$kernel_frag_files = get_linux_sha_remote($kernel_frag_files,
+			$relative_outputdir);
 	}
 }
 
