@@ -16,6 +16,8 @@ LINUX_CPE_ID_VENDOR = linux
 LINUX_CPE_ID_PRODUCT = linux_kernel
 LINUX_CPE_ID_PREFIX = cpe:2.3:o
 
+BRCM_BR_CONFIG = bin/br_config.pl
+
 # Compute LINUX_SOURCE and LINUX_SITE from the configuration
 ifeq ($(BR2_LINUX_KERNEL_CUSTOM_TARBALL),y)
 LINUX_TARBALL = $(call qstrip,$(BR2_LINUX_KERNEL_CUSTOM_TARBALL_LOCATION))
@@ -135,6 +137,18 @@ endif
 # create a custom image
 ifeq ($(BR2_PACKAGE_HOST_UBOOT_TOOLS),y)
 LINUX_DEPENDENCIES += host-uboot-tools
+endif
+
+# Hooking LINUX_UPDATE_SHA into LINUX_POST_RSYNC_HOOKS means the function will
+# not be called unless a custom Linux kernel is being used (the rsync step isn't
+# being executed for cloned kernels). Also, only add the hook if br_config.pl
+# exists.
+ifneq ($(wildcard $(BRCM_BR_CONFIG)),)
+define LINUX_UPDATE_SHA
+	@echo "Re-generating kernel GIT hash for \"$(KERNEL_ARCH)\"..."
+	$(Q)$(BRCM_BR_CONFIG) -H $(KERNEL_ARCH)
+endef
+LINUX_POST_RSYNC_HOOKS += LINUX_UPDATE_SHA
 endif
 
 ifneq ($(ARCH_XTENSA_OVERLAY_FILE),)
