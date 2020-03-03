@@ -404,6 +404,24 @@ sub trigger_toolchain_sync($$)
 	}
 }
 
+sub get_kconfig_var($$)
+{
+	my ($fname, $key) = @_;
+	my $val;
+
+	open(F, $fname) || return undef;
+	while (<F>) {
+		if (/^$key\s*=\s*(.*)/) {
+			$val = $1;
+			$val =~ s/["']//g;
+			last;
+		}
+	}
+	close(F);
+
+	return $val;
+}
+
 sub get_kernel_header_version($$)
 {
 	my ($toolchain, $arch) = @_;
@@ -455,6 +473,11 @@ sub get_linux_sha($$$)
 	open(F, ">$version_fragment");
 	print(F "CONFIG_LOCALVERSION=\"-g$git_sha\"\n");
 	close(F);
+
+	if (!defined($fragments)) {
+		return '';
+	}
+
 	$version_fragment .= "," if ($fragments ne '');
 
 	return $version_fragment.$fragments;
@@ -694,6 +717,7 @@ sub print_usage($)
 		"          -d <fname>...use <fname> as kernel defconfig\n".
 		"          -F <fname>...use <fname> as kernel fragment file\n".
 		"          -f <fname>...use <fname> as BR fragment file\n".
+		"          -H...........obtain Linux GIT SHA only\n".
 		"          -i...........like -b, but also build FS images\n".
 		"          -j <jobs>....run <jobs> parallel build jobs\n".
 		"          -L <path>....use local <path> as Linux kernel\n".
@@ -717,6 +741,7 @@ my $prg = basename($0);
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
+my $hash_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
 my $relative_outputdir;
@@ -730,9 +755,11 @@ my $toolchain_ver;
 my $recommended_toolchain;
 my $kernel_header_version;
 my $arch;
+my $opt_keys;
 my %opts;
 
-getopts('3:bcDd:F:f:ij:L:l:M:no:R:r:ST:t:v:', \%opts);
+getopts('3:bcDd:F:f:Hij:L:l:M:no:R:r:ST:t:v:', \%opts);
+$opt_keys = join('', keys(%opts));
 $arch = $ARGV[0];
 
 if ($#ARGV < 0) {
@@ -743,6 +770,14 @@ if ($#ARGV < 0) {
 if (check_br() < 0) {
 	print(STDERR
 		"$prg: must be called from buildroot top level directory\n");
+	exit(1);
+}
+
+$hash_mode = 1 if ($opts{'H'});
+
+if ($hash_mode && $opt_keys =~ /[^H]/) {
+	print(STDERR
+		"$prg: option -H can't be combined with another option\n");
 	exit(1);
 }
 
@@ -809,6 +844,41 @@ $relative_outputdir .= "/$arch";
 # before it would create it itself.
 if (! -d $br_outputdir) {
 	make_path($br_outputdir);
+}
+
+# In hash mode, we only update the kernel hash and nothing else.
+if ($hash_mode) {
+	my $version_frag = VERSION_FRAGMENT;
+	my $auto_mk =  "$br_outputdir/".AUTO_MK;
+	my $k_frags = get_kconfig_var("$br_outputdir/.config",
+		'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES');
+
+	print("Running in hash mode for $arch...\n");
+
+	# Sanity checks that updating the hash makes sense. We don't do it if
+	#     1. The version fragment file hasn't been configured.
+	#     2. A non-custom kernel is being used (e.g. a cloned default
+	#        kernel).
+	#     3. SHA versioning has been disabled.
+	# Setting the hash would have no effect in the first case, since the
+	# kernel fragment would never be included. In the case of a non-custom
+	# kernel, updating the hash would more likely be misleading than
+	# helpful. Such a kernel should also not be modified locally. And if SHA
+	# versioning has been turned off, it would make no sense to update it.
+	if ($k_frags !~ /$version_frag/) {
+		print(STDERR "$prg: $version_frag isn't being used; ".
+			"won't update hash\n");
+		exit(0);
+	}
+	if (!-e $auto_mk) {
+		print(STDERR
+			"$prg: $auto_mk doesn't exist; won't update hash\n");
+		exit(0);
+	}
+
+	$local_linux = get_kconfig_var($auto_mk, 'LINUX_OVERRIDE_SRCDIR');
+	get_linux_sha_local(undef, $relative_outputdir, $local_linux);
+	exit(0);
 }
 
 # Our temporary defconfig goes in the output directory.
