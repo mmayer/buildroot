@@ -35,8 +35,10 @@ use constant BR_MIRROR_HOST => qw(stbgit.broadcom.com);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
 use constant MERGED_FRAGMENT => qw(merged_fragment);
+use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
 use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
+use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant VERSION_FRAGMENT => qw(local_version.txt);
@@ -112,6 +114,37 @@ sub check_br()
 	return 0 if (/Buildroot/);
 
 	return -1;
+}
+
+sub get_ccache_dir($)
+{
+	my ($shared_cache) = @_;
+	my $base_dir = dirname($shared_cache);
+	my $top_dir = dirname($base_dir);
+
+	# Can't have a shared cache if:
+	#   * top dir doesn't exist or
+	#   * top dir isn't writable and base dir doesn't exist
+	if (! -d $top_dir || (! -w $top_dir && ! -d $base_dir)) {
+		return PRIVATE_CCACHE;
+	}
+
+	if (! -d $base_dir) {
+		mkdir($base_dir);
+		chmod(0777, $base_dir);
+	}
+
+	# Can't have a shared cache if:
+	#   * shared cache doesn't exist and base dir isn't writable
+	return PRIVATE_CCACHE if (! -d $shared_cache && ! -w $base_dir);
+
+	if (! -d $shared_cache) {
+		mkdir($shared_cache);
+		chmod(0777, $shared_cache);
+	}
+
+	# Lastly, the shared cache itself must be writable.
+	return (-w $shared_cache) ? $shared_cache : PRIVATE_CCACHE;
 }
 
 # Check if the shared open source directory exists
@@ -730,7 +763,8 @@ sub print_usage($)
 		"          -S...........suppress using SHA in Linux version\n".
 		"          -T <verstr>..use this toolchain version\n".
 		"          -t <path>....use <path> as toolchain directory\n".
-		"          -v <tag>.....use <tag> as Linux version tag\n");
+		"          -v <tag>.....use <tag> as Linux version tag\n".
+		"          -X <path>....use <path> as CCACHE ('-' for none)\n");
 }
 
 ########################################
@@ -747,6 +781,7 @@ my $is_64bit = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
+my $br_ccache;
 my $inline_kernel_frag_file;
 my $kernel_frag_files;
 my $local_linux;
@@ -758,7 +793,7 @@ my $arch;
 my $opt_keys;
 my %opts;
 
-getopts('3:bcDd:F:f:Hij:L:l:M:no:R:r:ST:t:v:', \%opts);
+getopts('3:bcDd:F:f:Hij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
 $opt_keys = join('', keys(%opts));
 $arch = $ARGV[0];
 
@@ -891,6 +926,30 @@ if (defined($opts{'c'})) {
 	$status = system("rm -rf \"$br_outputdir\"");
 	$status = ($status >> 8) & 0xff;
 	exit($status);
+}
+
+if (defined($ENV{'BR_CCACHE'})) {
+	$br_ccache = $ENV{'BR_CCACHE'};
+}
+if (defined($opts{'X'})) {
+	$br_ccache = $opts{'X'};
+}
+if (defined($br_ccache)) {
+	if ($br_ccache eq '-') {
+		print("Not using CCACHE to build...\n");
+		$generic_config{'BR2_CCACHE'} = '';
+	} else {
+		print("Using custom CCACHE cache $br_ccache...\n");
+		$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
+	}
+} else {
+	$br_ccache = get_ccache_dir(SHARED_CCACHE);
+	print("Using CCACHE with cache $br_ccache...\n");
+	$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
+	if ($br_ccache eq SHARED_CCACHE) {
+		$generic_config{'BR2_CCACHE_INITIAL_SETUP'} =
+			"-M 10G -o 'umask=0'";
+	}
 }
 
 $kernel_frag_files = $opts{'F'} || '';
