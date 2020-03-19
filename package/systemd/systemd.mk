@@ -60,26 +60,28 @@ SYSTEMD_SELINUX_MODULES = systemd udev xdg
 
 SYSTEMD_PROVIDES = udev
 
+ifeq ($(BR2_ROOTFS_MERGED_USR),y)
+ROOTLIBDIR = /usr/lib
+else
+ROOTLIBDIR = /lib
+endif
+
 SYSTEMD_CONF_OPTS += \
 	-Ddefault-hierarchy=unified \
 	-Didn=true \
 	-Dima=false \
-	-Dkexec-path=/usr/sbin/kexec \
-	-Dkmod-path=/usr/bin/kmod \
 	-Dldconfig=false \
 	-Dlink-boot-shared=true \
 	-Dloadkeys-path=/usr/bin/loadkeys \
 	-Dman=false \
-	-Dmount-path=/usr/bin/mount \
 	-Dmode=release \
 	-Dnss-systemd=true \
 	-Dquotacheck-path=/usr/sbin/quotacheck \
 	-Dquotaon-path=/usr/sbin/quotaon \
-	-Drootlibdir='/usr/lib' \
+	-Drootlibdir='$(ROOTLIBDIR)' \
 	-Dsetfont-path=/usr/bin/setfont \
 	-Dsplit-bin=true \
 	-Dsplit-usr=false \
-	-Dsulogin-path=/usr/sbin/sulogin \
 	-Dsystem-gid-max=999 \
 	-Dsystem-uid-max=999 \
 	-Dsysvinit-path= \
@@ -87,12 +89,23 @@ SYSTEMD_CONF_OPTS += \
 	-Dtelinit-path= \
 	-Dtests=false \
 	-Dtmpfiles=true \
-	-Dumount-path=/usr/bin/umount \
 	-Dutmp=false
 
 ifeq ($(BR2_nios2),y)
 # Nios2 ld emits warnings, make warnings not to be treated as errors
 SYSTEMD_LDFLAGS = $(TARGET_LDFLAGS) -Wl,--no-fatal-warnings
+endif
+
+ifeq ($(BR2_ROOTFS_MERGED_USR),y)
+SYSTEMD_CONF_OPTS += \
+	-Dkexec-path=/usr/sbin/kexec \
+	-Dkmod-path=/usr/bin/kmod \
+	-Dmount-path=/usr/bin/mount \
+	-Dsulogin-path=/usr/sbin/sulogin \
+	-Dumount-path=/usr/bin/umount
+else
+SYSTEMD_CONF_OPTS += \
+	-Dsplit-usr=true
 endif
 
 ifeq ($(BR2_PACKAGE_ACL),y)
@@ -548,7 +561,7 @@ SYSTEMD_CONF_OPTS += \
 	-Dgnu-efi=true \
 	-Defi-cc=$(TARGET_CC) \
 	-Defi-ld=bfd \
-	-Defi-libdir=$(STAGING_DIR)/usr/lib \
+	-Defi-libdir=$(STAGING_DIR)$(ROOTLIBDIR) \
 	-Defi-includedir=$(STAGING_DIR)/usr/include/efi
 
 SYSTEMD_BOOT_EFI_ARCH = $(call qstrip,$(BR2_PACKAGE_SYSTEMD_BOOT_EFI_ARCH))
@@ -570,9 +583,27 @@ ifneq ($(SYSTEMD_FALLBACK_HOSTNAME),)
 SYSTEMD_CONF_OPTS += -Dfallback-hostname=$(SYSTEMD_FALLBACK_HOSTNAME)
 endif
 
+ifeq ($(BR2_ROOTFS_MERGED_USR),)
+define SYSTEMD_INSTALL_WARNING
+	@echo "=============================================================="
+	@echo "WARNING! systemd with non-merged /usr is neither tested nor"
+	@echo "supported. This configuration is provided for evaluation"
+	@echo "purposes only!"
+	@echo "=============================================================="
+endef
+
+# Yes, we warn twice. We want to be sure the warning isn't overlooked.
+SYSTEMD_PRE_INSTALL_TARGET_HOOKS += \
+	SYSTEMD_INSTALL_WARNING
+
+SYSTEMD_POST_INSTALL_TARGET_HOOKS += \
+	SYSTEMD_INSTALL_WARNING
+
+endif
+
 define SYSTEMD_INSTALL_INIT_HOOK
 	ln -fs multi-user.target \
-		$(TARGET_DIR)/usr/lib/systemd/system/default.target
+		$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/default.target
 endef
 
 define SYSTEMD_INSTALL_MACHINEID_HOOK
@@ -657,9 +688,9 @@ ifneq ($(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT)),)
 # * enable serial-getty@xxx for other $BR2_TARGET_GENERIC_TTY_PATH
 # * rewrite baudrates if a baudrate is provided
 define SYSTEMD_INSTALL_SERVICE_TTY
-	mkdir -p $(TARGET_DIR)/usr/lib/systemd/system/getty@.service.d; \
+	mkdir -p $(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/getty@.service.d; \
 	printf '[Install]\nDefaultInstance=\n' \
-		>$(TARGET_DIR)/usr/lib/systemd/system/getty@.service.d/buildroot-console.conf; \
+		>$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/getty@.service.d/buildroot-console.conf; \
 	if [ $(BR2_TARGET_GENERIC_GETTY_PORT) = "console" ]; \
 	then \
 		: ; \
@@ -667,12 +698,12 @@ define SYSTEMD_INSTALL_SERVICE_TTY
 	then \
 		printf '[Install]\nDefaultInstance=%s\n' \
 			$(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT)) \
-			>$(TARGET_DIR)/usr/lib/systemd/system/getty@.service.d/buildroot-console.conf; \
+			>$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/getty@.service.d/buildroot-console.conf; \
 	else \
-		mkdir -p $(TARGET_DIR)/usr/lib/systemd/system/serial-getty@.service.d;\
+		mkdir -p $(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/serial-getty@.service.d;\
 		printf '[Install]\nDefaultInstance=%s\n' \
 			$(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT)) \
-			>$(TARGET_DIR)/usr/lib/systemd/system/serial-getty@.service.d/buildroot-console.conf;\
+			>$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/serial-getty@.service.d/buildroot-console.conf;\
 	fi; \
 	if [ $(call qstrip,$(BR2_TARGET_GENERIC_GETTY_BAUDRATE)) -gt 0 ] ; \
 	then \
@@ -685,7 +716,7 @@ endef
 endif
 
 define SYSTEMD_INSTALL_PRESET
-	$(INSTALL) -D -m 644 $(SYSTEMD_PKGDIR)/80-buildroot.preset $(TARGET_DIR)/usr/lib/systemd/system-preset/80-buildroot.preset
+	$(INSTALL) -D -m 644 $(SYSTEMD_PKGDIR)/80-buildroot.preset $(TARGET_DIR)$(ROOTLIBDIR)/systemd/system-preset/80-buildroot.preset
 endef
 
 define SYSTEMD_INSTALL_INIT_SYSTEMD
