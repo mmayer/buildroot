@@ -20,8 +20,14 @@ SYSTEMD_DEPENDENCIES = \
 
 SYSTEMD_PROVIDES = udev
 
+ifeq ($(BR2_ROOTFS_MERGED_USR),y)
+ROOTLIBDIR = /usr/lib
+else
+ROOTLIBDIR = /lib
+endif
+
 SYSTEMD_CONF_OPTS += \
-	-Drootlibdir='/usr/lib' \
+	-Drootlibdir='$(ROOTLIBDIR)' \
 	-Dblkid=true \
 	-Dman=false \
 	-Dima=false \
@@ -33,14 +39,21 @@ SYSTEMD_CONF_OPTS += \
 	-Dsystem-uid-max=999 \
 	-Dsystem-gid-max=999 \
 	-Dtelinit-path=$(TARGET_DIR)/sbin/telinit \
+	-Dnobody-group=nogroup \
+	-Didn=true \
+	-Dnss-systemd=true
+
+ifeq ($(BR2_ROOTFS_MERGED_USR),y)
+SYSTEMD_CONF_OPTS += \
 	-Dkmod-path=/usr/bin/kmod \
 	-Dkexec-path=/usr/sbin/kexec \
 	-Dsulogin-path=/usr/sbin/sulogin \
 	-Dmount-path=/usr/bin/mount \
-	-Dumount-path=/usr/bin/umount \
-	-Dnobody-group=nogroup \
-	-Didn=true \
-	-Dnss-systemd=true
+	-Dumount-path=/usr/bin/umount
+else
+SYSTEMD_CONF_OPTS += \
+	-Dsplit-usr=true
+endif
 
 ifeq ($(BR2_PACKAGE_ACL),y)
 SYSTEMD_DEPENDENCIES += acl
@@ -438,8 +451,8 @@ SYSTEMD_CONF_OPTS += \
 	-Dgnu-efi=true \
 	-Defi-cc=$(TARGET_CC) \
 	-Defi-ld=$(TARGET_LD) \
-	-Defi-libdir=$(STAGING_DIR)/usr/lib \
-	-Defi-ldsdir=$(STAGING_DIR)/usr/lib \
+	-Defi-libdir=$(STAGING_DIR)$(ROOTLIBDIR) \
+	-Defi-ldsdir=$(STAGING_DIR)$(ROOTLIBDIR) \
 	-Defi-includedir=$(STAGING_DIR)/usr/include/efi
 
 SYSTEMD_BOOT_EFI_ARCH = $(call qstrip,$(BR2_PACKAGE_SYSTEMD_BOOT_EFI_ARCH))
@@ -463,9 +476,27 @@ ifneq ($(SYSTEMD_FALLBACK_HOSTNAME),)
 SYSTEMD_CONF_OPTS += -Dfallback-hostname=$(SYSTEMD_FALLBACK_HOSTNAME)
 endif
 
+ifeq ($(BR2_ROOTFS_MERGED_USR),)
+define SYSTEMD_INSTALL_WARNING
+	@echo "=============================================================="
+	@echo "WARNING! systemd with non-merged /usr is neither tested nor"
+	@echo "supported. This configuration is provided for evaluation"
+	@echo "purposes only!"
+	@echo "=============================================================="
+endef
+
+# Yes, we warn twice. We want to be sure the warning isn't overlooked.
+SYSTEMD_PRE_INSTALL_TARGET_HOOKS += \
+	SYSTEMD_INSTALL_WARNING
+
+SYSTEMD_POST_INSTALL_TARGET_HOOKS += \
+	SYSTEMD_INSTALL_WARNING
+
+endif
+
 define SYSTEMD_INSTALL_INIT_HOOK
 	ln -fs multi-user.target \
-		$(TARGET_DIR)/usr/lib/systemd/system/default.target
+		$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/default.target
 endef
 
 define SYSTEMD_INSTALL_MACHINEID_HOOK
@@ -521,9 +552,9 @@ ifneq ($(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT)),)
 # * enable serial-getty@xxx for other $BR2_TARGET_GENERIC_TTY_PATH
 # * rewrite baudrates if a baudrate is provided
 define SYSTEMD_INSTALL_SERVICE_TTY
-	mkdir $(TARGET_DIR)/usr/lib/systemd/system/getty@.service.d; \
+	mkdir $(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/getty@.service.d; \
 	printf '[Install]\nDefaultInstance=\n' \
-		>$(TARGET_DIR)/usr/lib/systemd/system/getty@.service.d/buildroot-console.conf; \
+		>$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/getty@.service.d/buildroot-console.conf; \
 	if [ $(BR2_TARGET_GENERIC_GETTY_PORT) = "console" ]; \
 	then \
 		: ; \
@@ -531,12 +562,12 @@ define SYSTEMD_INSTALL_SERVICE_TTY
 	then \
 		printf '[Install]\nDefaultInstance=%s\n' \
 			$(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT)) \
-			>$(TARGET_DIR)/usr/lib/systemd/system/getty@.service.d/buildroot-console.conf; \
+			>$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/getty@.service.d/buildroot-console.conf; \
 	else \
-		mkdir $(TARGET_DIR)/usr/lib/systemd/system/serial-getty@.service.d;\
+		mkdir $(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/serial-getty@.service.d;\
 		printf '[Install]\nDefaultInstance=%s\n' \
 			$(call qstrip,$(BR2_TARGET_GENERIC_GETTY_PORT)) \
-			>$(TARGET_DIR)/usr/lib/systemd/system/serial-getty@.service.d/buildroot-console.conf;\
+			>$(TARGET_DIR)$(ROOTLIBDIR)/systemd/system/serial-getty@.service.d/buildroot-console.conf;\
 	fi; \
 	if [ $(call qstrip,$(BR2_TARGET_GENERIC_GETTY_BAUDRATE)) -gt 0 ] ; \
 	then \
@@ -549,7 +580,7 @@ endef
 endif
 
 define SYSTEMD_INSTALL_PRESET
-	$(INSTALL) -D -m 644 $(SYSTEMD_PKGDIR)/80-buildroot.preset $(TARGET_DIR)/usr/lib/systemd/system-preset/80-buildroot.preset
+	$(INSTALL) -D -m 644 $(SYSTEMD_PKGDIR)/80-buildroot.preset $(TARGET_DIR)$(ROOTLIBDIR)/systemd/system-preset/80-buildroot.preset
 endef
 
 define SYSTEMD_INSTALL_INIT_SYSTEMD
