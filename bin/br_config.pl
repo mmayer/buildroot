@@ -768,20 +768,25 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 	my $br_oss_cache = SHARED_OSS_DIR.'/buildroot';
 
 	if (! -d $br_oss_cache) {
-		print("Creating shared open source directory $br_oss_cache...\n");
-		mkdir($br_oss_cache);
-		chmod(0777, $br_oss_cache);
-		# Setting the default UMASK to world-writable.
-		system("setfacl -m default:user::rwx $br_oss_cache");
-		system("setfacl -m default:group::rwx $br_oss_cache");
-		system("setfacl -m default:other::rwx $br_oss_cache");
-		system("setfacl -m default:mask::rwx $br_oss_cache");
+		print("Creating shared open source directory ".
+			"$br_oss_cache...\n");
+		if (!mkdir($br_oss_cache)) {
+			print(STDERR
+				"$prg: couldn't create $br_oss_cache -- $!\n");
+		} else {
+			chmod(0777, $br_oss_cache);
+			# Setting the default UMASK to world-writable.
+			system("setfacl -m default:user::rwx $br_oss_cache");
+			system("setfacl -m default:group::rwx $br_oss_cache");
+			system("setfacl -m default:other::rwx $br_oss_cache");
+			system("setfacl -m default:mask::rwx $br_oss_cache");
+		}
 	}
 
 	# This is a best-effort attempt to fix up directory permissions in the
 	# shared download cache. It will only work if the directories with the
 	# wrong permissions are owned by the user running br_config.pl
-	fix_oss_permissions($br_oss_cache);
+	fix_oss_permissions($br_oss_cache) if (-d $br_oss_cache);
 
 	# Make sure the cache directory is writable. Don't use it if we can't
 	# write to it.
