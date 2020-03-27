@@ -795,6 +795,9 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 		$generic_config{'BR2_DL_DIR'} = $br_oss_cache;
 		$generic_config{'BR2_DL_DIR_OPTS'} = '-m 777';
 		check_oss_stale_sources($br_oss_cache, $br_outputdir);
+	} else {
+		print("Ignoring non-writable download cache ".
+			"$br_oss_cache...\n");
 	}
 }
 if (!defined($generic_config{'BR2_DL_DIR'})) {
