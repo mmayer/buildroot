@@ -775,9 +775,14 @@ my $prg = basename($0);
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
+my $host_gcc_ver = `gcc -v 2>&1 | grep '^gcc'`;
+my $host_kernel_ver = `uname -r`;
+my $host_name = `hostname -f 2>/dev/null`;
+my $host_os_ver = `lsb_release -d 2>/dev/null`;
 my $hash_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
+my $host_addr;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
@@ -815,6 +820,12 @@ if ($hash_mode && $opt_keys =~ /[^H]/) {
 		"$prg: option -H can't be combined with another option\n");
 	exit(1);
 }
+
+chomp($host_name);
+chomp($host_kernel_ver);
+$host_gcc_ver =~ s/(.*\S)\s*\n/$1/s;
+$host_os_ver =~ s/.*:\s+(.*)\n$/$1/s;
+$host_addr = inet_ntoa(inet_aton($host_name)) || '';
 
 # Treat mips as an alias for bmips.
 $arch = 'bmips' if ($arch eq 'mips');
@@ -863,7 +874,6 @@ if (defined($opts{'L'})) {
 }
 
 if (defined($opts{'o'})) {
-	print("Using ".$opts{'o'}." as output directory...\n");
 	$br_outputdir = $opts{'o'};
 	$relative_outputdir = $br_outputdir;
 } else {
@@ -914,6 +924,16 @@ if ($hash_mode) {
 	$local_linux = get_kconfig_var($auto_mk, 'LINUX_OVERRIDE_SRCDIR');
 	get_linux_sha_local(undef, $relative_outputdir, $local_linux);
 	exit(0);
+}
+
+# This information may help troubleshoot build problems.
+print("Host is running $host_os_ver...\n");
+print("Host kernel is $host_kernel_ver...\n");
+print("Host name is $host_name ($host_addr)...\n");
+print("Host GCC is $host_gcc_ver...\n");
+
+if (defined($opts{'o'})) {
+	print("Using ".$opts{'o'}." as output directory...\n");
 }
 
 # Our temporary defconfig goes in the output directory.
