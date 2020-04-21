@@ -12,6 +12,7 @@ image_path="$1"
 # The output directory is one level up from the image directory.
 output_path=`dirname "$image_path"`
 dot_config="${output_path}/.config"
+local_config="${output_path}/local.mk"
 
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
@@ -176,12 +177,16 @@ set +e
 # we want to know at build time if it ever does.
 SKEL_VERSION=`grep default package/brcm-pm/Config.in | awk '{print $2}'`
 SKEL_PATH=`dirname ${TARGET_DIR}`/build/brcm-skel-${SKEL_VERSION}
-echo "Performing consistency check..."
-init_diff=`diff -u ${TARGET_DIR}/etc/inittab ${SKEL_PATH}/skel/etc/inittab`
-if [ $? != 0 ]; then
-	echo "Detected a potential problem with the start-up files."
-	echo "It is recommended to remove the output/<arch> directory and"
-	echo "rebuild from scratch."
-	echo "$init_diff"
-	exit 1
+
+# Run this test only if no custom skeleton is configured.
+if ! grep '^BRCM_SKEL_OVERRIDE_SRCDIR=' ${local_config} >/dev/null; then
+	echo "Performing consistency check..."
+	init_diff=`diff -u ${TARGET_DIR}/etc/inittab ${SKEL_PATH}/skel/etc/inittab`
+	if [ $? != 0 ]; then
+		echo "Detected a potential problem with the start-up files."
+		echo "It is recommended to remove the output/<arch> directory and"
+		echo "rebuild from scratch."
+		echo "$init_diff"
+		exit 1
+	fi
 fi
