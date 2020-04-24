@@ -45,13 +45,6 @@ if ls ${board_dir}/dropbear_*_host_key >/dev/null 2>&1; then
 	done
 fi
 
-# Enabling dropbear (rcS file inherited from the classic rootfs for now)
-rcS="${TARGET_DIR}/etc/init.d/rcS"
-if grep 'if [ -e /sbin/dropbear ]' "$rcS" >/dev/null; then
-	echo "Enabling dropbear rcS..."
-	sed -i 's| -e /sbin/dropbear | -e /usr/sbin/dropbear |' ${rcS}
-fi
-
 # Add SSH key for root
 sshdir="${TARGET_DIR}/root/.ssh"
 if [ -r ${board_dir}/brcmstb_root ]; then
@@ -154,7 +147,6 @@ else
 	grep "GPL-3.0" ${BASE_DIR}/legal-info/manifest.csv | \
 		cut -d, -f1 \
 			> ${TARGET_DIR}/usr/share/legal-info/GPL-3.0-packages
-	sed -i 's| -e /bin/gdbserver -o -e /bin/gdb | -s /usr/share/legal-info/GPL-3.0-packages |' ${rcS}
 fi
 
 # Copy directory structure from ${BASE_DIR}/files to the target
