@@ -772,6 +772,7 @@ sub print_usage($)
 ########################################
 my $prg = basename($0);
 
+my @orig_cmdline = @ARGV;
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
@@ -779,6 +780,7 @@ my $host_gcc_ver = `gcc -v 2>&1 | grep '^gcc'`;
 my $host_kernel_ver = `uname -r`;
 my $host_name = `hostname -f 2>/dev/null`;
 my $host_os_ver = `lsb_release -d 2>/dev/null`;
+my $host_perl_ver = `perl -v | grep '^This is'`;
 my $hash_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
@@ -824,6 +826,7 @@ if ($hash_mode && $opt_keys =~ /[^H]/) {
 chomp($host_name);
 chomp($host_kernel_ver);
 $host_gcc_ver =~ s/(.*\S)\s*\n/$1/s;
+$host_perl_ver =~ s/.*\(([^)]+)\).*/$1/s;
 $host_os_ver =~ s/.*:\s+(.*)\n$/$1/s;
 $host_addr = inet_ntoa(inet_aton($host_name)) || '';
 
@@ -931,6 +934,16 @@ print("Host is running $host_os_ver...\n");
 print("Host kernel is $host_kernel_ver...\n");
 print("Host name is $host_name ($host_addr)...\n");
 print("Host GCC is $host_gcc_ver...\n");
+print("Host perl is $host_perl_ver...\n");
+{
+	my @br_vars = grep { /^BR_/ } keys(%ENV);
+
+	print("Host environment:\n") if ($#br_vars >= 0);
+	foreach my $key (@br_vars) {
+		print("\t$key = ".$ENV{$key}."\n");
+	}
+}
+print("Command line is \"@orig_cmdline\"...\n");
 
 if (defined($opts{'o'})) {
 	print("Using ".$opts{'o'}." as output directory...\n");
