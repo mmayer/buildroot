@@ -521,6 +521,11 @@ sub get_linux_sha_local($$$)
 	my ($fragments, $fragment_dir, $linux_dir) = @_;
 	my $git_dir = "$linux_dir/.git";
 
+	# Let the caller know that there's no GIT SHA
+	if (!-e $git_dir) {
+		return undef;
+	}
+
 	# If the .git entry is a file rather than a directory, it means
 	# we are dealing with a submodule. We handle that case first.
 	if (-f $git_dir) {
@@ -1118,8 +1123,14 @@ if (defined($local_linux)) {
 	write_localmk($prg, $relative_outputdir);
 	# Get the kernel GIT SHA locally if it's a GIT tree.
 	if (!defined($opts{'S'})) {
-		$kernel_frag_files = get_linux_sha_local($kernel_frag_files,
+		my $kff = get_linux_sha_local($kernel_frag_files,
 				$relative_outputdir, $local_linux);
+		if (!defined($kff)) {
+			print("No GIT hash available for Linux kernel, ".
+				"not setting local version...\n");
+		} else {
+			$kernel_frag_files = $kff;
+		}
 	}
 } else {
 	# Delete our custom makefile, so we don't override the Linux directory.
