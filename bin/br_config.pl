@@ -122,6 +122,8 @@ sub get_ccache_dir($)
 	my ($shared_cache) = @_;
 	my $base_dir = dirname($shared_cache);
 	my $top_dir = dirname($base_dir);
+	my $ret = $shared_cache;
+	my $dh;
 
 	# Can't have a shared cache if:
 	#   * top dir doesn't exist or
@@ -144,8 +146,26 @@ sub get_ccache_dir($)
 		chmod(0777, $shared_cache);
 	}
 
-	# Lastly, the shared cache itself must be writable.
-	return (-w $shared_cache) ? $shared_cache : PRIVATE_CCACHE;
+	# Lastly, the shared cache itself and its sub-directories must be
+	# writable.
+	if (! -w $shared_cache) {
+		return PRIVATE_CCACHE;
+	}
+
+	opendir($dh, $shared_cache);
+	while (my $entry = readdir($dh)) {
+		# We only care about directories named 0-9 and a-f, as well as
+		# tmp.
+		if ($entry =~ /^[0-9a-f]$/ || $entry eq 'tmp') {
+			if (! -w "$shared_cache/$entry") {
+				$ret = PRIVATE_CCACHE;
+				last;
+			}
+		}
+	}
+	closedir($dh);
+
+	return $ret;
 }
 
 # Check if the shared open source directory exists
