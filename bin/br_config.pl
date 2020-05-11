@@ -40,6 +40,7 @@ use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
 					misc/toolchain) );
 use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
+use constant STB_CMA_DRIVER => qw(include/linux/brcmstb/cma_driver.h);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant VERSION_FRAGMENT => qw(local_version.txt);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
@@ -322,6 +323,13 @@ sub check_linux($)
 	}
 
 	return 1;
+}
+
+sub check_cma_driver($)
+{
+	my ($local_linux) = @_;
+
+	return (-r "$local_linux/".STB_CMA_DRIVER);
 }
 
 sub get_cores()
@@ -1117,6 +1125,10 @@ if (defined($local_linux)) {
 			"configuration files or build artifacts can interfere ".
 			"with the build.\n");
 		exit(1);
+	}
+	if (!check_cma_driver($local_linux)) {
+		print("Disabling CMATOOL since kernel doesn't support it...\n");
+		$generic_config{'BR2_PACKAGE_CMATOOL'} = '';
 	}
 
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
