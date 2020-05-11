@@ -124,11 +124,11 @@ sub check_open_source_dir()
 }
 
 # Without this explicit function prototype, Perl will complain that the
-# recursive call inside fix_oss_permission() is happening too early to check the
-# prototype.
-sub fix_oss_permissions($);
+# recursive call inside fix_shared_permission() is happening too early
+# to check the prototype.
+sub fix_shared_permissions($);
 
-sub fix_oss_permissions($)
+sub fix_shared_permissions($)
 {
 	my ($dir) = @_;
 	my @st = stat($dir);
@@ -153,7 +153,7 @@ sub fix_oss_permissions($)
 		# Skip "." and ".."
 		next if ($entry =~ /^\.{1,2}$/);
 		if (-d "$dir/$entry") {
-			fix_oss_permissions("$dir/$entry");
+			fix_shared_permissions("$dir/$entry");
 		}
 	}
 	closedir($dh);
@@ -1061,7 +1061,7 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 	# This is a best-effort attempt to fix up directory permissions in the
 	# shared download cache. It will only work if the directories with the
 	# wrong permissions are owned by the user running br_config.pl
-	fix_oss_permissions($br_oss_cache) if (-d $br_oss_cache);
+	fix_shared_permissions($br_oss_cache) if (-d $br_oss_cache);
 
 	# Make sure the cache directory is writable. Don't use it if we can't
 	# write to it.
