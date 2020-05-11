@@ -207,6 +207,8 @@ sub get_ccache_dir($)
 	}
 	closedir($dh);
 
+	fix_shared_permissions($shared_cache);
+
 	return $ret;
 }
 
