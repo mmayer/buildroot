@@ -117,6 +117,48 @@ sub check_br()
 	return -1;
 }
 
+# Check if the shared open source directory exists
+sub check_open_source_dir()
+{
+	return  (-d SHARED_OSS_DIR) ? 1 : 0;
+}
+
+# Without this explicit function prototype, Perl will complain that the
+# recursive call inside fix_oss_permission() is happening too early to check the
+# prototype.
+sub fix_oss_permissions($);
+
+sub fix_oss_permissions($)
+{
+	my ($dir) = @_;
+	my @st = stat($dir);
+	my $mode = $st[2] & 0777;
+	my $fuid = $st[4];
+	my $uid = $>;
+	my $dh;
+
+	# If directory doesn't have rwx permissions for group and other, we
+	# add them. We silently fail if the attempt is denied, since there is
+	# nothing more we can do.
+	if ($uid == $fuid && (($mode & WORLD_PERMS) != WORLD_PERMS)) {
+		chmod(0777, $dir) && print("Fixed permissions of $dir...\n");
+		print("Setting ACL for $dir...\n");
+		system("setfacl -m default:user::rwx $dir");
+		system("setfacl -m default:group::rwx $dir");
+		system("setfacl -m default:other::rwx $dir");
+		system("setfacl -m default:mask::rwx $dir");
+	}
+	opendir($dh, $dir);
+	while (my $entry = readdir($dh)) {
+		# Skip "." and ".."
+		next if ($entry =~ /^\.{1,2}$/);
+		if (-d "$dir/$entry") {
+			fix_oss_permissions("$dir/$entry");
+		}
+	}
+	closedir($dh);
+}
+
 sub get_ccache_dir($)
 {
 	my ($shared_cache) = @_;
@@ -166,48 +208,6 @@ sub get_ccache_dir($)
 	closedir($dh);
 
 	return $ret;
-}
-
-# Check if the shared open source directory exists
-sub check_open_source_dir()
-{
-	return  (-d SHARED_OSS_DIR) ? 1 : 0;
-}
-
-# Without this explicit function prototype, Perl will complain that the
-# recursive call inside fix_oss_permission() is happening too early to check the
-# prototype.
-sub fix_oss_permissions($);
-
-sub fix_oss_permissions($)
-{
-	my ($dir) = @_;
-	my @st = stat($dir);
-	my $mode = $st[2] & 0777;
-	my $fuid = $st[4];
-	my $uid = $>;
-	my $dh;
-
-	# If directory doesn't have rwx permissions for group and other, we
-	# add them. We silently fail if the attempt is denied, since there is
-	# nothing more we can do.
-	if ($uid == $fuid && (($mode & WORLD_PERMS) != WORLD_PERMS)) {
-		chmod(0777, $dir) && print("Fixed permissions of $dir...\n");
-		print("Setting ACL for $dir...\n");
-		system("setfacl -m default:user::rwx $dir");
-		system("setfacl -m default:group::rwx $dir");
-		system("setfacl -m default:other::rwx $dir");
-		system("setfacl -m default:mask::rwx $dir");
-	}
-	opendir($dh, $dir);
-	while (my $entry = readdir($dh)) {
-		# Skip "." and ".."
-		next if ($entry =~ /^\.{1,2}$/);
-		if (-d "$dir/$entry") {
-			fix_oss_permissions("$dir/$entry");
-		}
-	}
-	closedir($dh);
 }
 
 # Find downloaded Linux tar-balls
