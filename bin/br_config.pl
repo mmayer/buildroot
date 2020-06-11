@@ -831,6 +831,7 @@ my $host_kernel_ver = `uname -r`;
 my $host_name = `hostname -f 2>/dev/null`;
 my $host_os_ver = `lsb_release -d 2>/dev/null`;
 my $host_perl_ver = `perl -v | grep '^This is'`;
+my $clean_mode = 0;
 my $hash_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
@@ -865,8 +866,10 @@ if (check_br() < 0) {
 	exit(1);
 }
 
+$clean_mode = 1 if ($opts{'c'});
 $hash_mode = 1 if ($opts{'H'});
 
+option_cannot_be_combined($prg, $clean_mode, 'c', $opt_keys);
 option_cannot_be_combined($prg, $hash_mode, 'H', $opt_keys);
 
 chomp($host_name);
@@ -940,6 +943,16 @@ if (! -d $br_outputdir) {
 	make_path($br_outputdir);
 }
 
+# Clean up output directory
+if ($clean_mode) {
+	my $status;
+
+	print("Cleaning $br_outputdir...\n");
+	$status = system("rm -rf \"$br_outputdir\"");
+	$status = ($status >> 8) & 0xff;
+	exit($status);
+}
+
 # In hash mode, we only update the kernel hash and nothing else.
 if ($hash_mode) {
 	my $version_frag = VERSION_FRAGMENT;
@@ -997,15 +1010,6 @@ if (defined($opts{'o'})) {
 
 # Our temporary defconfig goes in the output directory.
 $temp_config = "$br_outputdir/$temp_config";
-
-if (defined($opts{'c'})) {
-	my $status;
-
-	print("Cleaning $br_outputdir...\n");
-	$status = system("rm -rf \"$br_outputdir\"");
-	$status = ($status >> 8) & 0xff;
-	exit($status);
-}
 
 if (defined($ENV{'BR_CCACHE'})) {
 	$br_ccache = $ENV{'BR_CCACHE'};
