@@ -398,9 +398,13 @@ sub find_toolchain($)
 	# location.
 	return undef unless (opendir($dh, TOOLCHAIN_DIR));
 
-	# Sort in reverse order, so newer toolchains appear first.
+	# Sort in reverse order, so newer toolchains appear first. Also, make
+	# sure we only match stbgcc version 6 and newer. Lastly, the toolchain
+	# directory must end with a digit (e.g. stbgcc-6.3-1.7). This excludes
+	# development toolchains that may have a suffix after the version number
+	# from being searched automatically.
 	@toolchains = sort { $b cmp $a }
-		grep { /stbgcc-[6-9]/ } readdir($dh);
+		grep { /stbgcc-[6-9].*\d$/ } readdir($dh);
 	closedir($dh);
 
 	foreach my $dir (@toolchains) {
