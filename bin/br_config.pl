@@ -776,6 +776,17 @@ sub write_config($$$)
 	close(F);
 }
 
+sub option_cannot_be_combined($$$$)
+{
+	my ($prg, $flag, $option, $options) = @_;
+
+	if ($flag && $options =~ /[^$option]/) {
+		print(STDERR "$prg: option -$option can't be combined with ".
+			"another option\n");
+		exit(1);
+	}
+}
+
 sub print_usage($)
 {
 	my ($prg) = @_;
@@ -856,11 +867,7 @@ if (check_br() < 0) {
 
 $hash_mode = 1 if ($opts{'H'});
 
-if ($hash_mode && $opt_keys =~ /[^H]/) {
-	print(STDERR
-		"$prg: option -H can't be combined with another option\n");
-	exit(1);
-}
+option_cannot_be_combined($prg, $hash_mode, 'H', $opt_keys);
 
 chomp($host_name);
 chomp($host_kernel_ver);
