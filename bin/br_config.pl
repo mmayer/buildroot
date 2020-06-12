@@ -945,12 +945,28 @@ if (! -d $br_outputdir) {
 
 # Clean up output directory
 if ($clean_mode) {
-	my $status;
+	my $err;
 
 	print("Cleaning $br_outputdir...\n");
-	$status = system("rm -rf \"$br_outputdir\"");
-	$status = ($status >> 8) & 0xff;
-	exit($status);
+	remove_tree($br_outputdir, { error => \$err });
+
+	# No error, let's exit.
+	exit(0) if ($#$err < 0);
+
+	# See https://perldoc.perl.org/File/Path.html#ERROR-HANDLING
+	for my $diag (@$err) {
+		my ($file, $message) = %$diag;
+		my $errmsg;
+
+		if ($file eq '') {
+			$errmsg = $message;
+		} else {
+			$errmsg = "error deleting $file -- $message";
+		}
+		print(STDERR "$prg: $errmsg\n");
+	}
+
+	exit(1);
 }
 
 # In hash mode, we only update the kernel hash and nothing else.
