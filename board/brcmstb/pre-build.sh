@@ -37,6 +37,10 @@ if [ "${BR_KEEP_KERNEL_MODULES}" != "" ]; then
 else
 	echo "Removing previous kernel modules"
 	rm -rf ${TARGET_DIR}/lib/modules/*
+	# The kernel directory can be linux-custom or linux-$tag, only one of
+	# which will exist. "[^t]" excludes linux-tools. That means we'll find
+	# the kernel directory without having to hard-code its naming pattern.
+	rm -f ${arch_dir}/build/linux-[^t]*/.stamp_target_installed
 fi
 
 # "test -d" implicitly dereferences symlinks, so it is not sufficient to
