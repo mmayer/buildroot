@@ -131,12 +131,19 @@ VERSION=$linux_ver
 EOF
 
 if grep 'BR2_NEED_LD_SO_CONF=y' "${dot_config}" >/dev/null; then
-	echo "Copying ${board_dir}/ld.so.conf..."
-	cp -p "${board_dir}/ld.so.conf" ${TARGET_DIR}/etc
-	echo "Copying ldconfig..."
-	cp -p ${HOST_DIR}/*gnu*/sysroot/sbin/ldconfig ${TARGET_DIR}/sbin
-	echo "Running host-ldconfig..."
-	./bin/ldconfig -r ${TARGET_DIR}
+	if [ "$musl_ldso" != "" ]; then
+		musl_arch=`echo "$musl_ld_base" | sed -e 's/ld-musl-\(.*\)\.so.*/\1/'`
+		ld_musl_path="/etc/ld-musl-$musl_arch.path"
+		echo "Setting up ${ld_musl_path}..."
+		cp -p "${board_dir}/ld.so.conf" "${TARGET_DIR}${ld_musl_path}"
+	else
+		echo "Copying ${board_dir}/ld.so.conf..."
+		cp -p "${board_dir}/ld.so.conf" ${TARGET_DIR}/etc
+		echo "Copying ldconfig..."
+		cp -p ${HOST_DIR}/*gnu*/sysroot/sbin/ldconfig ${TARGET_DIR}/sbin
+		echo "Running host-ldconfig..."
+		./bin/ldconfig -r ${TARGET_DIR}
+	fi
 fi
 
 # BR_SKIP_LEGAL_INFO permits a developer to skip the "make legal-info" stage to
