@@ -427,6 +427,10 @@ sub set_target_toolchain($$)
 	my $stbgcc = $toolchain."/bin/".$compiler_map{$arch};
 	my $version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
 
+	if (!-e $stbgcc) {
+		return -1;
+	}
+
 	if ($version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
 		my ($major, $minor, $patch) = ($1, $2, $3);
 		my $config_str = "BR2_TOOLCHAIN_EXTERNAL_GCC_$major";
@@ -439,6 +443,8 @@ sub set_target_toolchain($$)
 		print("Toolchain: $toolchain\n");
 	}
 	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
+
+	return 0;
 }
 
 sub trigger_toolchain_sync($$)
@@ -1257,8 +1263,12 @@ if ($recommended_toolchain ne '') {
 	print(STDERR "Hit Ctrl-C now or wait ".SLEEP_TIME." seconds...\n");
 	sleep(SLEEP_TIME);
 }
-print("Using $toolchain as toolchain...\n");
-set_target_toolchain($toolchain, $arch);
+if (set_target_toolchain($toolchain, $arch) < 0) {
+	print(STDERR "$prg: $toolchain doesn't exist for $arch\n");
+	exit(1);
+} else {
+	print("Using $toolchain as toolchain...\n");
+}
 
 # The toolchain may have changed since we last configured Buildroot. We need to
 # force it to create the symlinks again, so we are sure to use the toolchain
