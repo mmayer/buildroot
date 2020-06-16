@@ -376,6 +376,22 @@ sub get_cores()
 	return $num_cores;
 }
 
+sub get_libc($$)
+{
+	my ($toolchain, $arch) = @_;
+	my $full_path = "$toolchain/bin/".$compiler_map{$arch};
+	my $compiler = readlink($full_path);
+
+	if (!defined($compiler)) {
+		return undef;
+	}
+	if ($compiler =~ /(musl|uclibc)/) {
+		return $1;
+	}
+
+	return 'glibc';
+}
+
 sub find_toolchain($)
 {
 	my ($toolchain_ver) = @_;
@@ -426,9 +442,14 @@ sub set_target_toolchain($$)
 	my ($toolchain, $arch) = @_;
 	my $stbgcc = $toolchain."/bin/".$compiler_map{$arch};
 	my $version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
+	my $libc = get_libc($toolchain, $arch) || '';
+	my $libc_sel = 'BR2_TOOLCHAIN_EXTERNAL_CUSTOM_'.uc($libc);
 
 	if (!-e $stbgcc) {
 		return -1;
+	}
+	if ($libc eq '') {
+		return -2;
 	}
 
 	if ($version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
@@ -436,12 +457,15 @@ sub set_target_toolchain($$)
 		my $config_str = "BR2_TOOLCHAIN_EXTERNAL_GCC_$major";
 
 		print("Detected GCC $major ($major.$minor)...\n");
+		print("C library is $libc...\n");
 		$toolchain_config{$arch}{$config_str} = 'y';
 	} else {
 		print("WARNING! Couldn't determine GCC version number. ".
 			"Build may fail.\n");
 		print("Toolchain: $toolchain\n");
 	}
+
+	$toolchain_config{$arch}{$libc_sel} = 'y';
 	$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_PATH'} = $toolchain;
 
 	return 0;
@@ -1263,11 +1287,18 @@ if ($recommended_toolchain ne '') {
 	print(STDERR "Hit Ctrl-C now or wait ".SLEEP_TIME." seconds...\n");
 	sleep(SLEEP_TIME);
 }
-if (set_target_toolchain($toolchain, $arch) < 0) {
-	print(STDERR "$prg: $toolchain doesn't exist for $arch\n");
-	exit(1);
-} else {
+$ret = set_target_toolchain($toolchain, $arch);
+if ($ret == 0) {
 	print("Using $toolchain as toolchain...\n");
+} else {
+	if ($ret == -1) {
+		print(STDERR "$prg: $toolchain doesn't exist for $arch\n");
+	} elsif ($ret == -2) {
+		print(STDERR "$prg: couldn't determine libc for $toolchain\n");
+	} else {
+		print(STDERR "$prg: unknown toolchain error\n");
+	}
+	exit(1);
 }
 
 # The toolchain may have changed since we last configured Buildroot. We need to
