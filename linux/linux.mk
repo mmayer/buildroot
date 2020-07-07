@@ -14,6 +14,7 @@ LINUX_LICENSE_FILES = \
 endif
 
 BRCM_BR_CONFIG = bin/br_config.pl
+BRCM_LINUX_PRE_BUILD = board/brcmstb/linux-pre-build.sh
 
 define LINUX_HELP_CMDS
 	@echo '  linux-menuconfig       - Run Linux kernel menuconfig'
@@ -131,6 +132,13 @@ define LINUX_UPDATE_SHA
 	$(Q)$(BRCM_BR_CONFIG) -H $(KERNEL_ARCH)
 endef
 LINUX_POST_RSYNC_HOOKS += LINUX_UPDATE_SHA
+endif
+
+ifneq ($(wildcard $(BRCM_LINUX_PRE_BUILD)),)
+define BRCM_LINUX_PRE_BUILD_HOOK
+	$(BRCM_LINUX_PRE_BUILD)
+endef
+LINUX_PRE_BUILD_HOOKS += BRCM_LINUX_PRE_BUILD_HOOK
 endif
 
 ifneq ($(ARCH_XTENSA_OVERLAY_FILE),)
