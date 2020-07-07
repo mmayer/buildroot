@@ -27,18 +27,6 @@ lib64="${TARGET_DIR}/lib64"
 # Nothing to do if the target directory doesn't exist.
 test -d "${TARGET_DIR}" || exit 0
 
-# Remove kernel modules for other kernel versions to avoid artificially
-# inflating the initramfs.
-set +u
-test -z ${BR_KEEP_KERNEL_MODULES} && BR_KEEP_KERNEL_MODULES=""
-set -u
-if [ "${BR_KEEP_KERNEL_MODULES}" != "" ]; then
-	echo "Keeping previous kernel modules"
-else
-	echo "Removing previous kernel modules"
-	rm -rf ${TARGET_DIR}/lib/modules/*
-fi
-
 # "test -d" implicitly dereferences symlinks, so it is not sufficient to
 # test whether lib64 is a directory. We also have to ensure it's not a
 # symlink.
