@@ -376,6 +376,56 @@ sub get_cores()
 	return $num_cores;
 }
 
+sub get_stbrelease($)
+{
+	my ($linux_dir) = @_;
+	my ($version, $patch_level, $extra_version);
+
+	if (!open(F, "$linux_dir/Makefile")) {
+		return undef;
+	}
+
+	while (my $line = <F>) {
+		chomp($line);
+		if ($line =~ /^VERSION\s+=\s+(.*)/) {
+			$version = $1;
+		}
+		if ($line =~ /^PATCHLEVEL\s*=\s*(.*)/) {
+			$patch_level = $1;
+		}
+		if ($line =~ /^EXTRAVERSION\s*=\s*(.*)/) {
+			$extra_version = $1;
+			# No need to keep parsing the Makefile.
+			last;
+		}
+	}
+	close(F);
+
+	return ($version, $patch_level, $extra_version);
+}
+
+sub get_stbrelease_string($)
+{
+	my ($linux_dir) = @_;
+	my $ret;
+	my ($version, $patch_level, $extra_version) =
+		get_stbrelease($linux_dir);
+
+	if (!defined($version)) {
+		return '<unknown>';
+	}
+
+	$ret = $version;
+	if (defined($patch_level)) {
+		$ret .= ".$patch_level";
+	}
+	if (defined($extra_version)) {
+		$ret .= $extra_version;
+	}
+
+	return $ret;
+}
+
 sub get_libc($$)
 {
 	my ($toolchain, $arch) = @_;
@@ -1049,6 +1099,7 @@ print("Host perl is $host_perl_ver...\n");
 	}
 }
 print("Command line is \"@orig_cmdline\"...\n");
+print("STB version is ".get_stbrelease_string($local_linux)."...\n");
 
 if (defined($opts{'o'})) {
 	print("Using ".$opts{'o'}." as output directory...\n");
