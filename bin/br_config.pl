@@ -856,6 +856,70 @@ sub write_config($$$)
 	close(F);
 }
 
+sub run_clean_mode($$)
+{
+	my ($prg, $br_outputdir) = @_;
+	my $err;
+
+	print("Cleaning $br_outputdir...\n");
+	remove_tree($br_outputdir, { error => \$err });
+
+	# No error, let's exit.
+	exit(0) if ($#$err < 0);
+
+	# See https://perldoc.perl.org/File/Path.html#ERROR-HANDLING
+	for my $diag (@$err) {
+		my ($file, $message) = %$diag;
+		my $errmsg;
+
+		if ($file eq '') {
+			$errmsg = $message;
+		} else {
+			$errmsg = "error deleting $file -- $message";
+		}
+		print(STDERR "$prg: $errmsg\n");
+	}
+
+	exit(1);
+}
+
+sub run_hash_mode($$$)
+{
+	my ($prg, $arch, $br_outputdir) = @_;
+	my $version_frag = VERSION_FRAGMENT;
+	my $auto_mk =  "$br_outputdir/".AUTO_MK;
+	my $k_frags = get_kconfig_var("$br_outputdir/.config",
+		'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES');
+	my $local_linux;
+
+	print("Running in hash mode for $arch...\n");
+
+	# Sanity checks that updating the hash makes sense. We don't do it if
+	#     1. The version fragment file hasn't been configured.
+	#     2. A non-custom kernel is being used (e.g. a cloned default
+	#        kernel).
+	#     3. SHA versioning has been disabled.
+	# Setting the hash would have no effect in the first case, since the
+	# kernel fragment would never be included. In the case of a non-custom
+	# kernel, updating the hash would more likely be misleading than
+	# helpful. Such a kernel should also not be modified locally. And if SHA
+	# versioning has been turned off, it would make no sense to update it.
+	if ($k_frags !~ /$version_frag/) {
+		print(STDERR "$prg: $version_frag isn't being used; ".
+			"won't update hash\n");
+		exit(0);
+	}
+	if (!-e $auto_mk) {
+		print(STDERR
+			"$prg: $auto_mk doesn't exist; won't update hash\n");
+		exit(0);
+	}
+
+	$local_linux = get_kconfig_var($auto_mk, 'LINUX_OVERRIDE_SRCDIR');
+	get_linux_sha_local(undef, $br_outputdir, $local_linux);
+	exit(0);
+}
+
 sub option_cannot_be_combined($$$$)
 {
 	my ($prg, $flag, $option, $options) = @_;
@@ -1024,65 +1088,10 @@ if (! -d $br_outputdir) {
 }
 
 # Clean up output directory
-if ($clean_mode) {
-	my $err;
-
-	print("Cleaning $br_outputdir...\n");
-	remove_tree($br_outputdir, { error => \$err });
-
-	# No error, let's exit.
-	exit(0) if ($#$err < 0);
-
-	# See https://perldoc.perl.org/File/Path.html#ERROR-HANDLING
-	for my $diag (@$err) {
-		my ($file, $message) = %$diag;
-		my $errmsg;
-
-		if ($file eq '') {
-			$errmsg = $message;
-		} else {
-			$errmsg = "error deleting $file -- $message";
-		}
-		print(STDERR "$prg: $errmsg\n");
-	}
-
-	exit(1);
-}
+run_clean_mode($prg, $br_outputdir) if ($clean_mode);
 
 # In hash mode, we only update the kernel hash and nothing else.
-if ($hash_mode) {
-	my $version_frag = VERSION_FRAGMENT;
-	my $auto_mk =  "$br_outputdir/".AUTO_MK;
-	my $k_frags = get_kconfig_var("$br_outputdir/.config",
-		'BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES');
-
-	print("Running in hash mode for $arch...\n");
-
-	# Sanity checks that updating the hash makes sense. We don't do it if
-	#     1. The version fragment file hasn't been configured.
-	#     2. A non-custom kernel is being used (e.g. a cloned default
-	#        kernel).
-	#     3. SHA versioning has been disabled.
-	# Setting the hash would have no effect in the first case, since the
-	# kernel fragment would never be included. In the case of a non-custom
-	# kernel, updating the hash would more likely be misleading than
-	# helpful. Such a kernel should also not be modified locally. And if SHA
-	# versioning has been turned off, it would make no sense to update it.
-	if ($k_frags !~ /$version_frag/) {
-		print(STDERR "$prg: $version_frag isn't being used; ".
-			"won't update hash\n");
-		exit(0);
-	}
-	if (!-e $auto_mk) {
-		print(STDERR
-			"$prg: $auto_mk doesn't exist; won't update hash\n");
-		exit(0);
-	}
-
-	$local_linux = get_kconfig_var($auto_mk, 'LINUX_OVERRIDE_SRCDIR');
-	get_linux_sha_local(undef, $relative_outputdir, $local_linux);
-	exit(0);
-}
+run_hash_mode($prg, $arch, $br_outputdir) if ($hash_mode);
 
 # This information may help troubleshoot build problems.
 print("Host is running $host_os_ver...\n");
