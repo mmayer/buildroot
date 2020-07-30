@@ -890,6 +890,56 @@ sub print_host_info($$)
 	print("STB version is $stb_release ($local_linux)...\n");
 }
 
+sub get_32bit_runtime($$$)
+{
+	my ($arch, $runtime_base, $rt_path) = @_;
+
+	if (defined($rt_path)) {
+		if (! -d $rt_path && $rt_path ne '-') {
+			print(STDERR "WARNING: 32-bit directory $rt_path does ".
+				"not exist!\n");
+			$rt_path = '';
+		}
+	} else {
+		my $arch32 = $arch;
+
+		$arch32 =~ s|64||;
+		# "sysroot" and "sys-root" are being used as directory names
+		$rt_path = `ls -d "$runtime_base/$arch32"*/sys*root 2>/dev/null`;
+		chomp($rt_path);
+	}
+
+	if ($rt_path eq '') {
+		print("32-bit libraries not found, disabling 32-bit ".
+			"support...\n".
+			"Use command line option -3 <path> to specify your ".
+			"32-bit sysroot.\n");
+	} elsif ($rt_path eq '-') {
+		printf("Disabling 32-bit support by user request\n");
+	} else {
+		my $arch64 = $arch_config{$arch}{'arch_name'};
+		my $rt64_path =
+			`ls -d "$runtime_base/$arch64"*/sys*root 2>/dev/null`;
+		chomp($rt64_path);
+
+		print("Using $rt_path for 32-bit environment\n");
+		$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32'} = 'y';
+		$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32_PATH'} = $rt_path;
+
+		# Additional KConfig variables are derived from the value of
+		# BR2_ROOTFS_LIB_DIR in system/Config.in.
+		if (-l "$rt64_path/lib64") {
+			print("Found new toolchain using /lib and /lib32...\n");
+
+		} else {
+			print("Found traditional toolchain using /lib64 and ".
+				"/lib...\n");
+			$arch_config{$arch}{'BR2_NEED_LD_SO_CONF'} = 'y';
+		}
+		print("Root file system will use /lib and /lib32...\n");
+	}
+}
+
 sub run_clean_mode($$)
 {
 	my ($prg, $br_outputdir) = @_;
@@ -1411,56 +1461,7 @@ if (defined($br_mirror) && $br_mirror ne '-') {
 	print("Not using a Buildroot mirror...\n");
 }
 
-if ($is_64bit) {
-	my $rt_path;
-	my $runtime_base = $toolchain;
-
-	if (defined($opts{'3'})) {
-		$rt_path = $opts{'3'};
-		if (! -d $rt_path && $rt_path ne '-') {
-			print(STDERR "WARNING: 32-bit directory $rt_path does ".
-				"not exist!\n");
-			$rt_path = '';
-		}
-	} else {
-		my $arch32 = $arch;
-
-		$arch32 =~ s|64||;
-		# "sysroot" and "sys-root" are being used as directory names
-		$rt_path = `ls -d "$runtime_base/$arch32"*/sys*root 2>/dev/null`;
-		chomp($rt_path);
-	}
-
-	if ($rt_path eq '') {
-		print("32-bit libraries not found, disabling 32-bit ".
-			"support...\n".
-			"Use command line option -3 <path> to specify your ".
-			"32-bit sysroot.\n");
-	} elsif ($rt_path eq '-') {
-		printf("Disabling 32-bit support by user request\n");
-	} else {
-		my $arch64 = $arch_config{$arch}{'arch_name'};
-		my $rt64_path =
-			`ls -d "$runtime_base/$arch64"*/sys*root 2>/dev/null`;
-		chomp($rt64_path);
-
-		print("Using $rt_path for 32-bit environment\n");
-		$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32'} = 'y';
-		$arch_config{$arch}{'BR2_ROOTFS_RUNTIME32_PATH'} = $rt_path;
-
-		# Additional KConfig variables are derived from the value of
-		# BR2_ROOTFS_LIB_DIR in system/Config.in.
-		if (-l "$rt64_path/lib64") {
-			print("Found new toolchain using /lib and /lib32...\n");
-
-		} else {
-			print("Found traditional toolchain using /lib64 and ".
-				"/lib...\n");
-			$arch_config{$arch}{'BR2_NEED_LD_SO_CONF'} = 'y';
-		}
-		print("Root file system will use /lib and /lib32...\n");
-	}
-}
+get_32bit_runtime($arch, $toolchain, $opts{'3'}) if ($is_64bit);
 
 write_config(\%generic_config, $temp_config, 1);
 write_config($arch_config{$arch}, $temp_config, 0);
