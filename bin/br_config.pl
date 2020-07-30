@@ -856,6 +856,40 @@ sub write_config($$$)
 	close(F);
 }
 
+sub print_host_info($$)
+{
+	my ($orig_cmdline, $local_linux) = @_;
+	my $host_gcc_ver = `gcc -v 2>&1 | grep '^gcc'`;
+	my $host_kernel_ver = `uname -r`;
+	my $host_name = `hostname -f 2>/dev/null`;
+	my $host_os_ver = `lsb_release -d 2>/dev/null`;
+	my $host_perl_ver = `perl -v | grep '^This is'`;
+	my $stb_release = get_stbrelease_string($local_linux);
+	my @br_vars = grep { /^BR_/ } keys(%ENV);
+	my $host_addr;
+
+	chomp($host_name);
+	chomp($host_kernel_ver);
+	$host_gcc_ver =~ s/(.*\S)\s*\n/$1/s;
+	$host_perl_ver =~ s/.*\(([^)]+)\).*/$1/s;
+	$host_os_ver =~ s/.*:\s+(.*)\n$/$1/s;
+	$host_addr = inet_ntoa(inet_aton($host_name)) || '';
+
+	print("Host is running $host_os_ver...\n");
+	print("Host kernel is $host_kernel_ver...\n");
+	print("Host name is $host_name ($host_addr)...\n");
+	print("Host GCC is $host_gcc_ver...\n");
+	print("Host perl is $host_perl_ver...\n");
+
+	print("Host environment:\n") if ($#br_vars >= 0);
+	foreach my $key (@br_vars) {
+		print("\t$key = ".$ENV{$key}."\n");
+	}
+
+	print("Command line is \"@$orig_cmdline\"...\n");
+	print("STB version is $stb_release ($local_linux)...\n");
+}
+
 sub run_clean_mode($$)
 {
 	my ($prg, $br_outputdir) = @_;
@@ -970,16 +1004,10 @@ my @orig_cmdline = @ARGV;
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
-my $host_gcc_ver = `gcc -v 2>&1 | grep '^gcc'`;
-my $host_kernel_ver = `uname -r`;
-my $host_name = `hostname -f 2>/dev/null`;
-my $host_os_ver = `lsb_release -d 2>/dev/null`;
-my $host_perl_ver = `perl -v | grep '^This is'`;
 my $clean_mode = 0;
 my $hash_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
-my $host_addr;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
@@ -1015,13 +1043,6 @@ $hash_mode = 1 if ($opts{'H'});
 
 option_cannot_be_combined($prg, $clean_mode, 'c', $opt_keys);
 option_cannot_be_combined($prg, $hash_mode, 'H', $opt_keys);
-
-chomp($host_name);
-chomp($host_kernel_ver);
-$host_gcc_ver =~ s/(.*\S)\s*\n/$1/s;
-$host_perl_ver =~ s/.*\(([^)]+)\).*/$1/s;
-$host_os_ver =~ s/.*:\s+(.*)\n$/$1/s;
-$host_addr = inet_ntoa(inet_aton($host_name)) || '';
 
 # Treat mips as an alias for bmips.
 $arch = 'bmips' if ($arch eq 'mips');
@@ -1094,21 +1115,7 @@ run_clean_mode($prg, $br_outputdir) if ($clean_mode);
 run_hash_mode($prg, $arch, $br_outputdir) if ($hash_mode);
 
 # This information may help troubleshoot build problems.
-print("Host is running $host_os_ver...\n");
-print("Host kernel is $host_kernel_ver...\n");
-print("Host name is $host_name ($host_addr)...\n");
-print("Host GCC is $host_gcc_ver...\n");
-print("Host perl is $host_perl_ver...\n");
-{
-	my @br_vars = grep { /^BR_/ } keys(%ENV);
-
-	print("Host environment:\n") if ($#br_vars >= 0);
-	foreach my $key (@br_vars) {
-		print("\t$key = ".$ENV{$key}."\n");
-	}
-}
-print("Command line is \"@orig_cmdline\"...\n");
-print("STB version is ".get_stbrelease_string($local_linux)."...\n");
+print_host_info(\@orig_cmdline, $local_linux);
 
 if (defined($opts{'o'})) {
 	print("Using ".$opts{'o'}." as output directory...\n");
