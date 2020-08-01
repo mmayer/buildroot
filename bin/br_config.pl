@@ -381,6 +381,9 @@ sub get_stbrelease($)
 	my ($linux_dir) = @_;
 	my ($version, $patch_level, $extra_version);
 
+	if (!defined($linux_dir)) {
+		return undef;
+	}
 	if (!open(F, "$linux_dir/Makefile")) {
 		return undef;
 	}
@@ -887,7 +890,9 @@ sub print_host_info($$)
 	}
 
 	print("Command line is \"@$orig_cmdline\"...\n");
-	print("STB version is $stb_release ($local_linux)...\n");
+	if (defined($stb_release) && defined($local_linux)) {
+		print("STB version is $stb_release ($local_linux)...\n");
+	}
 }
 
 sub get_32bit_runtime($$$)
