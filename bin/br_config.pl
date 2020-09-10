@@ -31,7 +31,7 @@ use constant LOCAL_MK => qw(local.mk);
 use constant BR_FRAG_FILE => qw(br_fragments.cfg);
 use constant KERNEL_FRAG_FILE => qw(k_fragments.cfg);
 
-use constant BR_MIRROR_HOST => qw(stbgit.broadcom.com);
+use constant BR_MIRROR_HOST => qw(stbgit.stb.broadcom.net);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
 use constant MERGED_FRAGMENT => qw(merged_fragment);
@@ -96,7 +96,7 @@ my %toolchain_config = (
 
 my %generic_config = (
 	'BR2_LINUX_KERNEL_CUSTOM_REPO_URL' =>
-				'git://stbgit.broadcom.com/queue/linux.git',
+				'git://stbgit.stb.broadcom.net/queue/linux.git',
 	'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION' => 'stb-4.9',
 );
 
