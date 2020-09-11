@@ -1034,6 +1034,7 @@ sub print_usage($)
 		"          -F <fname>...use <fname> as kernel fragment file\n".
 		"          -f <fname>...use <fname> as BR fragment file\n".
 		"          -H...........obtain Linux GIT SHA only\n".
+		"          -h...........show this help text\n".
 		"          -i...........like -b, but also build FS images\n".
 		"          -j <jobs>....run <jobs> parallel build jobs\n".
 		"          -L <path>....use local <path> as Linux kernel\n".
@@ -1078,11 +1079,11 @@ my $arch;
 my $opt_keys;
 my %opts;
 
-getopts('3:bcDd:F:f:Hij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
+getopts('3:bcDd:F:f:Hhij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
 $opt_keys = join('', keys(%opts));
 $arch = $ARGV[0];
 
-if ($#ARGV < 0) {
+if ($#ARGV < 0 || $opts{'h'}) {
 	print_usage($prg);
 	exit(1);
 }
