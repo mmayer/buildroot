@@ -69,6 +69,14 @@ BUSYBOX_DEPENDENCIES = \
 	$(if $(BR2_PACKAGE_WGET),wget) \
 	$(if $(BR2_PACKAGE_WHOIS),whois)
 
+define BRCMSTB_PATCHES
+	$(Q)bbox_brcm_patches="$(PKGDIR)/brcmstb-$(BUSYBOX_VERSION)"; \
+	if [ -d "$${bbox_brcm_patches}" ]; then \
+		$(APPLY_PATCHES) $(@D) "$${bbox_brcm_patches}" \*; \
+	fi
+endef
+BUSYBOX_PRE_PATCH_HOOKS += BRCMSTB_PATCHES
+
 # Link against libtirpc if available so that we can leverage its RPC
 # support for NFS mounting with BusyBox
 ifeq ($(BR2_PACKAGE_LIBTIRPC),y)
