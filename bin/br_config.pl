@@ -778,8 +778,8 @@ sub write_localmk($$)
 
 		@buf = <F>;
 		close(F);
-		# Check if we are already including out auto-generated makefile
-		# snipped. Bail if we do.
+		# Check if we are already including our auto-generated makefile
+		# snippet. Bail if we do.
 		foreach my $line (@buf) {
 			return if ($line =~ /include .*$auto_mk/);
 		}
