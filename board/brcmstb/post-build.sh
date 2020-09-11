@@ -188,7 +188,7 @@ SKEL_VERSION=`grep default package/brcm-pm/Config.in | awk '{print $2}'`
 SKEL_PATH=`dirname ${TARGET_DIR}`/build/brcm-skel-${SKEL_VERSION}
 
 # Run this test only if no custom skeleton is configured.
-if ! grep '^BRCM_SKEL_OVERRIDE_SRCDIR=' ${local_config} >/dev/null; then
+if ! grep '^BRCM_SKEL_OVERRIDE_SRCDIR[[:space:]]*=' ${local_config} >/dev/null; then
 	echo "Performing consistency check..."
 	init_diff=`diff -u ${TARGET_DIR}/etc/inittab ${SKEL_PATH}/skel/etc/inittab`
 	if [ $? != 0 ]; then
