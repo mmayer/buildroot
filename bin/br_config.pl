@@ -524,6 +524,29 @@ sub set_target_toolchain($$)
 	return 0;
 }
 
+sub get_linux_remote()
+{
+	return $generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'};
+}
+
+sub resolve_remote($)
+{
+	my ($remote) = @_;
+
+	# If it's a URL, extract the host portion.
+	if ($remote =~ /^\w+:\/\/([^\/:]+)/) {
+		return defined(gethostbyname($1));
+	}
+
+	# Not a URL. Try to resolve it as-is.
+	return defined(gethostbyname($remote));
+}
+
+sub resolve_linux_remote()
+{
+	return resolve_remote(get_linux_remote());
+}
+
 sub trigger_toolchain_sync($$)
 {
 	my ($output_dir, $arch) = @_;
@@ -669,8 +692,7 @@ sub get_linux_sha_remote($$)
 {
 	my ($fragments, $fragment_dir) = @_;
 
-	my $git_remote =
-		$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'};
+	my $git_remote = get_linux_remote();
 	my $git_branch =
 		$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
 	my $git_cmd = "git ls-remote \"$git_remote\" | ".
@@ -1351,13 +1373,22 @@ if (defined($local_linux)) {
 		}
 	}
 } else {
+	my $linux_remote_resolves = resolve_linux_remote();
+
 	# Delete our custom makefile, so we don't override the Linux directory.
 	if (-e "$br_outputdir/".AUTO_MK) {
 		unlink("$br_outputdir/".AUTO_MK);
 	}
+
+	if (!$linux_remote_resolves) {
+		my $linux_remote = get_linux_remote();
+		print("WARNING! Couldn't resolve $linux_remote!\n".
+			"Build may fail.\n");
+	}
+
 	# Determine the kernel GIT SHA remotely. The tree hasn't been cloned
-	# yet.
-	if (!defined($opts{'S'})) {
+	# yet. We can't do anything if we can't resolve the remote host.
+	if ($linux_remote_resolves && !defined($opts{'S'})) {
 		$kernel_frag_files = get_linux_sha_remote($kernel_frag_files,
 			$relative_outputdir);
 	}
