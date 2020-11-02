@@ -530,6 +530,45 @@ sub get_linux_remote()
 	return $generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_URL'};
 }
 
+sub verify_mirror_host()
+{
+	my $addr = gethostbyname(BR_MIRROR_HOST);
+	my ($a, $b, $c, $d);
+
+	# If we can't resolve it, we can't use it.
+	if (!defined($addr)) {
+		return 0;
+	}
+
+	($a, $b, $c, $d) = unpack('W4', $addr);
+
+	# If it's a private IP on the 10.x.x.x, 172.14.x.x-172.31.x.x or
+	# 192.168.x.x networks, we are good to go.
+	if ($a == 10 ||
+	    ($a == 172 && $b >= 14 && $b <= 31) ||
+	    ($a == 192 && $b == 168)) {
+		return 1;
+	}
+
+	# If it's a public IP, it won't be the server we are looking for.
+	return 0;
+}
+
+sub get_br_mirror_host()
+{
+	my $br_mirror = BR_MIRROR_PROTOCOL.BR_MIRROR_HOST.BR_MIRROR_PATH;
+
+	# Only use the Broadcom mirror if we can resolve the name *AND* it is
+	# a private IP address. Otherwise, we'll either run into a DNS timeout
+	# for every package we need to download or we'll try to download the
+	# packages from a server that isn't actually BR_MIRROR_HOST.
+	if (!verify_mirror_host()) {
+		return undef;
+	}
+
+	return $br_mirror;
+}
+
 sub resolve_remote($)
 {
 	my ($remote) = @_;
@@ -1485,11 +1524,7 @@ if (defined($opts{'M'})) {
 }
 
 if (!defined($br_mirror)) {
-	# Only use the Broadcom mirror if we can resolve the name, otherwise
-	# we'll run into a DNS timeout for every package we need to download.
-	if (gethostbyname(BR_MIRROR_HOST)) {
-		$br_mirror = BR_MIRROR_PROTOCOL.BR_MIRROR_HOST.BR_MIRROR_PATH;
-	}
+	$br_mirror = get_br_mirror_host();
 }
 if (defined($br_mirror) && $br_mirror ne '-') {
 	print("Using $br_mirror as Buildroot mirror...\n");
