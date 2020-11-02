@@ -23,6 +23,7 @@ use Fcntl ':mode';
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 use Getopt::Std;
+use LWP::UserAgent;
 use POSIX;
 use Socket;
 
@@ -35,6 +36,8 @@ use constant BR_MIRROR_PROTOCOL => qw(https://);
 use constant BR_MIRROR_HOST => qw(stbgit.stb.broadcom.net);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
+# Trailing space after the user agent tells Perl to append "libwww-perl/x.y.z".
+use constant HTTP_USER_AGENT => q(BRCMSTB/br_config.pl );
 use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
 use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
@@ -557,12 +560,20 @@ sub verify_mirror_host()
 sub get_br_mirror_host()
 {
 	my $br_mirror = BR_MIRROR_PROTOCOL.BR_MIRROR_HOST.BR_MIRROR_PATH;
+	my $ua = LWP::UserAgent->new('agent' => HTTP_USER_AGENT);
+	my $res;
 
 	# Only use the Broadcom mirror if we can resolve the name *AND* it is
 	# a private IP address. Otherwise, we'll either run into a DNS timeout
 	# for every package we need to download or we'll try to download the
 	# packages from a server that isn't actually BR_MIRROR_HOST.
 	if (!verify_mirror_host()) {
+		return undef;
+	}
+
+	# Check if BR_MIRROR_PATH exists on BR_MIRROR_HOST
+	$res = $ua->head($br_mirror);
+	if (!$res->is_success) {
 		return undef;
 	}
 
