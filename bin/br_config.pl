@@ -31,6 +31,7 @@ use constant LOCAL_MK => qw(local.mk);
 use constant BR_FRAG_FILE => qw(br_fragments.cfg);
 use constant KERNEL_FRAG_FILE => qw(k_fragments.cfg);
 
+use constant BR_MIRROR_PROTOCOL => qw(https://);
 use constant BR_MIRROR_HOST => qw(stbgit.stb.broadcom.net);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
@@ -1487,7 +1488,7 @@ if (!defined($br_mirror)) {
 	# Only use the Broadcom mirror if we can resolve the name, otherwise
 	# we'll run into a DNS timeout for every package we need to download.
 	if (gethostbyname(BR_MIRROR_HOST)) {
-		$br_mirror = "http://".BR_MIRROR_HOST.BR_MIRROR_PATH;
+		$br_mirror = BR_MIRROR_PROTOCOL.BR_MIRROR_HOST.BR_MIRROR_PATH;
 	}
 }
 if (defined($br_mirror) && $br_mirror ne '-') {
