@@ -31,6 +31,24 @@ $prg =~ s|.*/||;
 $br_base =~ s|/?bin/[^/]+$||;
 $br_base = '.' if ($br_base eq '');
 
+sub find_match($$)
+{
+	my ($arch_hash, $ver) = @_;
+
+	# Sort the keys to ensure the same matching order between calls.
+	foreach my $avail_ver (sort(keys(%$arch_hash))) {
+		# Ensure it's a regex before we attempt any matching. If we
+		# didn't have this restriction, we'd try matching against all
+		# version entries, which could lead to unexpected results.
+		# E.g. using stb-4.1 as regex would match stb-4.16.
+		if ($avail_ver !~ /^stb-\d+\.\d+$/ && $ver =~ /$avail_ver/) {
+			return join(' ', @{$arch_hash->{$avail_ver}});
+		}
+	}
+
+	return undef;
+}
+
 sub get_archs($$)
 {
 	my ($dir, $ver) = @_;
@@ -44,12 +62,15 @@ sub get_archs($$)
 	} elsif (open(F, "$dir/".ARCHS)) {
 		my @json = <F>;
 		my $json = join('', @json);
-		my $arch_hash = decode_json($json);
+		my $arch_hash;
 
-		if (!defined($arch_hash->{$ver})) {
-			$archs = undef;
-		} else {
+		$json =~ s/\\/\\\\/g;
+		$arch_hash = decode_json($json);
+
+		if (defined($arch_hash->{$ver})) {
 			$archs = join(' ', @{$arch_hash->{$ver}});
+		} else {
+			$archs = find_match($arch_hash, $ver);
 		}
 	} else {
 		return undef;
