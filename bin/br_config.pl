@@ -1219,6 +1219,11 @@ if (defined($opts{'L'})) {
 	}
 }
 
+if (defined($local_linux) && $local_linux eq '') {
+	print(STDERR "$prg: The path to the Linux directory can't be empty.\n");
+	exit(1);
+}
+
 if (defined($opts{'o'})) {
 	$br_outputdir = $opts{'o'};
 	$relative_outputdir = $br_outputdir;
