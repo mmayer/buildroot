@@ -23,6 +23,7 @@ use Fcntl ':mode';
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 use Getopt::Std;
+use JSON;
 use LWP::UserAgent;
 use POSIX;
 use Socket;
@@ -45,6 +46,7 @@ use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant STB_CMA_DRIVER => qw(include/linux/brcmstb/cma_driver.h);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant TOOLCHAIN_FILE_CLASSIC => qw(misc/toolchain);
+use constant TOOLCHAIN_FILE_JSON => qw(misc/toolchain.json);
 use constant TOOLCHAIN_FILE_MASTER => qw(misc/toolchain.master);
 use constant VERSION_FRAGMENT => qw(local_version.txt);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
@@ -273,6 +275,73 @@ sub check_oss_stale_sources($$)
 	}
 }
 
+sub find_stb_toolchain_match($$)
+{
+	my ($tc_data, $ver) = @_;
+
+	foreach my $entry (@$tc_data) {
+		my ($cur_ver, $cur_tc) = @$entry;
+
+		# Ensure it's a regex before we attempt any matching. If we
+		# we tried matching against all version entries, it would
+		# lead to unexpected results.
+		# E.g. using stb-4.1 as regex would match stb-4.16.
+		if ($cur_ver !~ /^stb-\d+\.\d+$/ && $ver =~ /$cur_ver/) {
+			return $cur_tc;
+		}
+	}
+
+	return undef;
+}
+
+sub find_stb_toolchain_entry($$)
+{
+	my ($tc_data, $ver) = @_;
+
+	foreach my $entry (@$tc_data) {
+		if ($entry->[0] eq $ver) {
+			return $entry->[1];
+		}
+	}
+
+	return undef;
+}
+
+sub get_json_toolchain($$)
+{
+	my ($file, $local_linux) = @_;
+	my ($version, $patch, $extra) = get_stbrelease($local_linux);
+	my @json;
+	my $json;
+	my $kernel_version;
+	my $tc_data;
+	my $tc;
+
+	return undef if (!open(F, $file));
+
+	@json = <F>;
+	$json = join('', @json);
+	close(F);
+
+	# Escape backslashes. decode_json() expects it.
+	$json =~ s/\\/\\\\/g;
+	$tc_data = decode_json($json);
+
+	if (defined($version)) {
+		$kernel_version = "stb-$version.$patch";
+	} else {
+		$kernel_version =
+			$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
+	}
+
+	# There's an exact match. Return it.
+	$tc = find_stb_toolchain_entry($tc_data, $kernel_version);
+	return $tc if (defined($tc));
+
+	# Try pattern matching to determine the recommended toolchain.
+	return find_stb_toolchain_match($tc_data, $kernel_version);
+}
+
 sub get_plaintext_toolchain($)
 {
 	my ($file) = @_;
@@ -287,12 +356,19 @@ sub get_plaintext_toolchain($)
 	return $recommended;
 }
 
-sub get_recommended_toolchain()
+sub get_recommended_toolchain($)
 {
+	my ($local_linux) = @_;
 	my $recommended;
 
 	# Try it the master repo first.
 	$recommended = get_plaintext_toolchain(TOOLCHAIN_FILE_MASTER);
+	if (defined($recommended)) {
+		return $recommended;
+	}
+
+	# Next, let's look for the JSON file with toolchain information.
+	$recommended = get_json_toolchain(TOOLCHAIN_FILE_JSON, $local_linux);
 	if (defined($recommended)) {
 		return $recommended;
 	}
@@ -304,13 +380,13 @@ sub get_recommended_toolchain()
 }
 
 # Check if the specified toolchain is the recommended one.
-sub check_toolchain($)
+sub check_toolchain($$)
 {
-	my ($toolchain) = @_;
+	my ($toolchain, $local_linux) = @_;
 	my $recommended;
 
 	$toolchain =~ s|.*/||;
-	$recommended = get_recommended_toolchain();
+	$recommended = get_recommended_toolchain($local_linux);
 
 	# If we don't know what the recommended toolchain is, we accept the
 	# one that was specified.
@@ -1299,7 +1375,7 @@ $kernel_frag_files = $opts{'F'} || '';
 
 $toolchain_ver = $opts{'T'} || '';
 if ($toolchain_ver eq '' && !defined($opts{'t'})) {
-	my $tc_ver = get_recommended_toolchain();
+	my $tc_ver = get_recommended_toolchain($local_linux);
 	if ($tc_ver ne '') {
 		print("Trying to find recommended toolchain $tc_ver...\n");
 		$toolchain = find_toolchain($tc_ver);
@@ -1499,7 +1575,7 @@ if (defined($opts{'t'})) {
 	$toolchain =~ s|/+$||;
 }
 
-$recommended_toolchain = check_toolchain($toolchain);
+$recommended_toolchain = check_toolchain($toolchain, $local_linux);
 if ($recommended_toolchain ne '') {
 	my $t = $toolchain;
 
