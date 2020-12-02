@@ -40,12 +40,12 @@ use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
 use constant HTTP_USER_AGENT => q(BRCMSTB/br_config.pl );
 use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
-use constant RECOMMENDED_TOOLCHAINS => ( qw(misc/toolchain.master
-					misc/toolchain) );
 use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant STB_CMA_DRIVER => qw(include/linux/brcmstb/cma_driver.h);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
+use constant TOOLCHAIN_FILE_CLASSIC => qw(misc/toolchain);
+use constant TOOLCHAIN_FILE_MASTER => qw(misc/toolchain.master);
 use constant VERSION_FRAGMENT => qw(local_version.txt);
 use constant VERSION_H => qw(/usr/include/linux/version.h);
 
@@ -273,23 +273,32 @@ sub check_oss_stale_sources($$)
 	}
 }
 
-sub get_recommended_toolchain()
+sub get_plaintext_toolchain($)
 {
+	my ($file) = @_;
 	my $recommended;
-	my $found = 0;
 
-	foreach my $tc (RECOMMENDED_TOOLCHAINS) {
-		if (open(F, $tc)) {
-			$found = 1;
-			last;
-		}
-	}
-	if (!$found) {
-		return '';
-	}
+	return undef if (!open(F, $file));
+
 	$recommended = <F>;
 	chomp($recommended);
 	close(F);
+
+	return $recommended;
+}
+
+sub get_recommended_toolchain()
+{
+	my $recommended;
+
+	# Try it the master repo first.
+	$recommended = get_plaintext_toolchain(TOOLCHAIN_FILE_MASTER);
+	if (defined($recommended)) {
+		return $recommended;
+	}
+
+	# Lastly, let's try the classic plain-text file.
+	$recommended = get_plaintext_toolchain(TOOLCHAIN_FILE_CLASSIC) || '';
 
 	return $recommended;
 }
