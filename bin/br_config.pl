@@ -1233,6 +1233,10 @@ if (defined($local_linux) && $local_linux eq '') {
 	exit(1);
 }
 
+if (defined($opts{'v'})) {
+	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
+}
+
 if (defined($opts{'o'})) {
 	$br_outputdir = $opts{'o'};
 	$relative_outputdir = $br_outputdir;
@@ -1403,7 +1407,6 @@ if (defined($opts{'l'})) {
 
 if (defined($opts{'v'})) {
 	print("Using ".$opts{'v'}." as Linux kernel version...\n");
-	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
 }
 
 if (defined($local_linux)) {
