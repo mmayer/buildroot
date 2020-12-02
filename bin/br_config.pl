@@ -1167,6 +1167,14 @@ sub run_hash_mode($$$)
 	exit(0);
 }
 
+sub run_tc_info_mode($)
+{
+	my ($local_linux) = @_;
+
+	print(get_recommended_toolchain($local_linux), "\n");
+	exit(0);
+}
+
 sub option_cannot_be_combined($$$$)
 {
 	my ($prg, $flag, $option, $options) = @_;
@@ -1186,6 +1194,7 @@ sub print_usage($)
 		"          -3 <path>....path to 32-bit run-time ('-' to ".
 			"disable)\n".
 		"          -b...........launch build after configuring\n".
+		"          -C...........display compiler information\n".
 		"          -c...........clean (remove output/\$platform)\n".
 		"          -D...........use platform's default kernel config\n".
 		"          -d <fname>...use <fname> as kernel defconfig\n".
@@ -1220,6 +1229,7 @@ my $br_output_default = 'output';
 my $temp_config = 'temp_config';
 my $clean_mode = 0;
 my $hash_mode = 0;
+my $tc_info_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
 my $relative_outputdir;
@@ -1237,7 +1247,7 @@ my $arch;
 my $opt_keys;
 my %opts;
 
-getopts('3:bcDd:F:f:Hhij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
+getopts('3:bCcDd:F:f:Hhij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
 $opt_keys = join('', keys(%opts));
 $arch = $ARGV[0];
 
@@ -1254,6 +1264,7 @@ if (check_br() < 0) {
 
 $clean_mode = 1 if ($opts{'c'});
 $hash_mode = 1 if ($opts{'H'});
+$tc_info_mode = 1 if ($opts{'C'});
 
 option_cannot_be_combined($prg, $clean_mode, 'c', $opt_keys);
 option_cannot_be_combined($prg, $hash_mode, 'H', $opt_keys);
@@ -1312,6 +1323,9 @@ if (defined($local_linux) && $local_linux eq '') {
 if (defined($opts{'v'})) {
 	$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'} = $opts{'v'};
 }
+
+# Display information about the toolchain
+run_tc_info_mode($local_linux) if ($tc_info_mode);
 
 if (defined($opts{'o'})) {
 	$br_outputdir = $opts{'o'};
