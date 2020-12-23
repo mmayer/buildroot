@@ -842,7 +842,7 @@ sub get_linux_sha_remote($$)
 sub parse_cmdline_fragments($$)
 {
 	my ($out_file, $frag_str) = @_;
-	my @frags = split(/;/, $frag_str);
+	my @frags = split(/[;,]/, $frag_str);
 
 	return '' if ($frag_str eq '');
 
