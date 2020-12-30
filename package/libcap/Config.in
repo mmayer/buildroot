@@ -21,4 +21,13 @@ config BR2_PACKAGE_LIBCAP_TOOLS
 	  support for the file system type used on target system (e.g.
 	  CONFIG_EXT2_FS_XATTR and CONFIG_EXT2_FS_SECURITY for ext2).
 
+config BR2_PACKAGE_LIBCAP_DISABLE_STATIC
+	bool "disable installation of static libraries"
+	help
+	   Some toolchains may have issues with linking specific
+	   compiler/runtime libraries (such as libssp). Packages like
+	   lxc may force static linking of the entire executable when
+	   the makefile detects that a static libcap is available.
+
 endif
+
