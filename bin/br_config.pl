@@ -39,6 +39,8 @@ use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
 use constant FORBIDDEN_PATHS => ( qw(. /tools/bin) );
 # Trailing space after the user agent tells Perl to append "libwww-perl/x.y.z".
 use constant HTTP_USER_AGENT => q(BRCMSTB/br_config.pl );
+use constant LLVM_MIN_KERNEL => qw(5.4);
+use constant LLVM_WRAPPER => qw(llvm-wrapper.pl);
 use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
 use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
@@ -275,6 +277,26 @@ sub check_oss_stale_sources($$)
 	}
 }
 
+sub kernel_at_least($$)
+{
+	my ($ver, $min_ver) = @_;
+	my ($maj, $min);
+	my ($min_maj, $min_min);
+
+	if ($ver =~ /(\d+)\.(\d+)/) {
+		($maj, $min) = ($1, $2);
+	} else {
+		return 0;
+	}
+	if ($min_ver =~ /(\d+)\.(\d+)/) {
+		($min_maj, $min_min) = ($1, $2);
+	} else {
+		return 0;
+	}
+
+	return (($maj > $min_maj) || ($maj == $min_maj && $min >= $min_min));
+}
+
 sub find_stb_toolchain_match($$)
 {
 	my ($tc_data, $ver) = @_;
@@ -465,6 +487,20 @@ sub get_cores()
 	return $num_cores;
 }
 
+# Find the corresponding GCC toolchain if we are using LLVM. Otherwise just
+# return the toolchain directory that was passed in.
+sub get_gcc_dir($)
+{
+	my ($toolchain) = @_;
+	my $llvm_wrapper = "$toolchain/bin/".LLVM_WRAPPER;
+
+	if (-x $llvm_wrapper) {
+		chomp($toolchain = `$llvm_wrapper --get-gcc`);
+	}
+
+	return $toolchain;
+}
+
 sub get_stbrelease($)
 {
 	my ($linux_dir) = @_;
@@ -585,28 +621,58 @@ sub find_toolchain($)
 	return undef;
 }
 
-sub set_target_toolchain($$)
+sub set_target_toolchain($$$)
 {
-	my ($toolchain, $arch) = @_;
-	my $stbgcc = $toolchain."/bin/".$compiler_map{$arch};
-	my $version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
+	my ($toolchain, $arch, $local_linux) = @_;
+	my $stbcc = "$toolchain/bin/".$compiler_map{$arch};
+	my $gcc_version = `$stbcc -v 2>&1 | grep 'gcc version'`;
+	my $llvm_version = `$stbcc -v 2>&1 | grep 'clang version'`;
+	my $gcc_dir = get_gcc_dir($toolchain);
 	my $libc = get_libc($toolchain, $arch) || '';
 	my $libc_sel = 'BR2_TOOLCHAIN_EXTERNAL_CUSTOM_'.uc($libc);
+	my @stb_rel = get_stbrelease($local_linux);
+	my $kernel_version;
 
-	if (!-e $stbgcc) {
+	if (! -e $stbcc) {
 		return -1;
 	}
 	if ($libc eq '') {
 		return -2;
 	}
 
-	if ($version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
+	if (defined($stb_rel[0])) {
+		$kernel_version = $stb_rel[0].".".$stb_rel[1];
+	}
+
+	if ($gcc_version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
 		my ($major, $minor, $patch) = ($1, $2, $3);
 		my $config_str = "BR2_TOOLCHAIN_EXTERNAL_GCC_$major";
 
 		print("Detected GCC $major ($major.$minor)...\n");
 		print("C library is $libc...\n");
 		$toolchain_config{$arch}{$config_str} = 'y';
+	} elsif ($llvm_version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
+		my $stbgcc;
+		my ($gcc_major, $gcc_minor, $gcc_patch);
+		my ($major, $minor, $patch) = ($1, $2, $3);
+
+		$stbgcc = "$gcc_dir/bin/".$compiler_map{$arch};
+		$gcc_version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
+		if ($gcc_version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
+			($gcc_major, $gcc_minor, $gcc_patch) = ($1, $2, $3);
+		} else {
+			return -3;
+		}
+
+		print("Detected LLVM $major.$minor...\n");
+		print("Detected GCC $gcc_major.$gcc_minor...\n");
+		print("C library is $libc...\n");
+		if (!kernel_at_least($kernel_version, LLVM_MIN_KERNEL)) {
+			print("WARNING! LLVM is only supported as of kernel ".
+				LLVM_MIN_KERNEL.". You have $kernel_version. ".
+				"Build may fail.\n");
+		}
+		$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_LLVM'} = 'y';
 	} else {
 		print("WARNING! Couldn't determine GCC version number. ".
 			"Build may fail.\n");
@@ -742,6 +808,7 @@ sub get_sysroot($$)
 	my ($toolchain, $arch) = @_;
 	my ($compiler_arch, $sys_root);
 
+	$toolchain = get_gcc_dir($toolchain);
 	$compiler_arch = $arch_config{$arch}->{'arch_name'};
 	# The MIPS compiler may be called "mipsel-*" not just "mips-*".
 	if (defined($arch_config{$arch}->{'BR2_mipsel'})) {
@@ -1603,7 +1670,9 @@ if (defined($opts{'t'})) {
 	$toolchain =~ s|/+$||;
 }
 
-$recommended_toolchain = check_toolchain($toolchain, $local_linux);
+# Only check the GCC portion of the toolchain at this time. We may want an LLVM
+# check later on.
+$recommended_toolchain = check_toolchain(get_gcc_dir($toolchain), $local_linux);
 if ($recommended_toolchain ne '') {
 	my $t = $toolchain;
 
@@ -1613,7 +1682,7 @@ if ($recommended_toolchain ne '') {
 	print(STDERR "Hit Ctrl-C now or wait ".SLEEP_TIME." seconds...\n");
 	sleep(SLEEP_TIME);
 }
-$ret = set_target_toolchain($toolchain, $arch);
+$ret = set_target_toolchain($toolchain, $arch, $local_linux);
 if ($ret == 0) {
 	print("Using $toolchain as toolchain...\n");
 } else {
