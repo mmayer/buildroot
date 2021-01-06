@@ -471,6 +471,12 @@ sub get_stbrelease($)
 	my ($version, $patch_level, $extra_version);
 
 	if (!defined($linux_dir)) {
+		my $ver =
+			$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
+		if ($ver =~ /^[A-Za-z_-]*(\d+)\.(\d+)/) {
+			return ($1, $2);
+		}
+
 		return undef;
 	}
 	if (!open(F, "$linux_dir/Makefile")) {
