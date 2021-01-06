@@ -598,8 +598,13 @@ define $(2)_CONFIGURE_CMDS
 		$$(call toolchain_find_sysroot,$$(TOOLCHAIN_EXTERNAL_CC)),\
 		$$(call qstrip,$$(BR2_TOOLCHAIN_HEADERS_AT_LEAST)),\
 		$$(if $$(BR2_TOOLCHAIN_EXTERNAL_CUSTOM),loose,strict)); \
-	$$(call check_gcc_version,$$(TOOLCHAIN_EXTERNAL_CC),\
-		$$(call qstrip,$$(BR2_TOOLCHAIN_GCC_AT_LEAST))); \
+	if test "$$(BR2_TOOLCHAIN_EXTERNAL_LLVM)" = "y" ; then \
+		$$(call check_cc_version,$$(TOOLCHAIN_EXTERNAL_CC),\
+			$$(call qstrip,$$(BR2_TOOLCHAIN_LLVM_AT_LEAST))); \
+	else \
+		$$(call check_cc_version,$$(TOOLCHAIN_EXTERNAL_CC),\
+			$$(call qstrip,$$(BR2_TOOLCHAIN_GCC_AT_LEAST))); \
+	fi ; \
 	if test "$$(BR2_arm)" = "y" ; then \
 		$$(call check_arm_abi,\
 			"$$(TOOLCHAIN_EXTERNAL_CC) $$(TOOLCHAIN_EXTERNAL_CFLAGS)") ; \
