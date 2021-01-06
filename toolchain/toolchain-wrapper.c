@@ -62,9 +62,12 @@ static char *predef_args[] = {
 	ccache_path,
 #endif
 	path,
+/* Skip passing --sysroot and -mabi if we are using LLVM */
+#ifndef BR_LLVM
 	"--sysroot", sysroot,
 #ifdef BR_ABI
 	"-mabi=" BR_ABI,
+#endif
 #endif
 #ifdef BR_NAN
 	"-mnan=" BR_NAN,
