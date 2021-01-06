@@ -182,13 +182,13 @@ check_kernel_headers_version = \
 	fi
 
 #
-# Check the specific gcc version actually matches the version in the
+# Check the specific compiler version actually matches the version in the
 # toolchain
 #
-# $1: path to gcc
-# $2: expected gcc version
+# $1: path to compiler
+# $2: expected compiler version
 #
-check_gcc_version = \
+check_cc_version = \
 	expected_version="$(strip $2)" ; \
 	if [ -z "$${expected_version}" ]; then \
 		exit 0 ; \
