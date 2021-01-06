@@ -731,19 +731,29 @@ sub get_kconfig_var($$)
 	return $val;
 }
 
-sub get_kernel_header_version($$)
+sub get_sysroot($$)
 {
 	my ($toolchain, $arch) = @_;
-	my ($compiler_arch, $sys_root, $version_path);
-	my $version_code;
+	my ($compiler_arch, $sys_root);
 
 	$compiler_arch = $arch_config{$arch}->{'arch_name'};
 	# The MIPS compiler may be called "mipsel-*" not just "mips-*".
 	if (defined($arch_config{$arch}->{'BR2_mipsel'})) {
 		$compiler_arch .= "el";
 	}
+	# "sysroot" and "sys-root" are being used as possible directory names
 	$sys_root = `ls -d "$toolchain/$compiler_arch"*/sys*root 2>/dev/null`;
 	chomp($sys_root);
+
+	return $sys_root;
+}
+
+sub get_kernel_header_version($$)
+{
+	my ($toolchain, $arch) = @_;
+	my ($sys_root, $version_code, $version_path);
+
+	$sys_root = get_sysroot($toolchain, $arch);
 	if ($sys_root eq '') {
 		return undef;
 	}
@@ -1067,9 +1077,7 @@ sub get_32bit_runtime($$$)
 		my $arch32 = $arch;
 
 		$arch32 =~ s|64||;
-		# "sysroot" and "sys-root" are being used as directory names
-		$rt_path = `ls -d "$runtime_base/$arch32"*/sys*root 2>/dev/null`;
-		chomp($rt_path);
+		$rt_path = get_sysroot($runtime_base, $arch32);
 	}
 
 	if ($rt_path eq '') {
