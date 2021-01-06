@@ -26,6 +26,21 @@ config BR2_TOOLCHAIN_EXTERNAL_CUSTOM_PREFIX
 	default "$(ARCH)-linux"
 
 choice
+	bool "External toolchain type"
+	help
+	  Choose gcc or llvm as the external toolchain.
+
+config BR2_TOOLCHAIN_EXTERNAL_GCC
+	bool "Use gcc"
+
+config BR2_TOOLCHAIN_EXTERNAL_LLVM
+	bool "Use llvm"
+
+endchoice
+
+if BR2_TOOLCHAIN_EXTERNAL_GCC
+
+choice
 	bool "External toolchain gcc version"
 	help
 	  Set to the gcc version that is used by your external
@@ -99,6 +114,24 @@ config BR2_TOOLCHAIN_EXTERNAL_GCC_OLD
 	  work at all. Use such old toolchains at your own risk.
 
 endchoice
+
+endif
+
+if BR2_TOOLCHAIN_EXTERNAL_LLVM
+
+choice
+	bool "External toolchain llvm version"
+	help
+	  Set to the llvm version that is used by your external
+	  toolchain.
+
+config BR2_TOOLCHAIN_EXTERNAL_LLVM_10
+	bool "10.x"
+	select BR2_TOOLCHAIN_LLVM_AT_LEAST_10
+
+endchoice
+
+endif
 
 comment "GCC older than 4.8 is not tested by Buildroot. Use at your own risk."
 	depends on !BR2_TOOLCHAIN_GCC_AT_LEAST_4_8
@@ -459,6 +492,7 @@ config BR2_TOOLCHAIN_EXTERNAL_HAS_SSP
 	bool "Toolchain has SSP support?"
 	default y if BR2_TOOLCHAIN_EXTERNAL_GLIBC
 	default y if BR2_TOOLCHAIN_EXTERNAL_MUSL
+	depends on !BR2_TOOLCHAIN_LLVM
 	select BR2_TOOLCHAIN_HAS_SSP
 	help
 	  Select this option if your external toolchain has Stack
