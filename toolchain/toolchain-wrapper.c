@@ -18,6 +18,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -246,7 +247,7 @@ bool parse_source_date_epoch_from_env(void)
 int main(int argc, char **argv)
 {
 	char **args, **cur, **exec_args;
-	char *relbasedir, *absbasedir;
+	char *relbasedir, *absbasedir, *br_outputdir, *output_ptr;
 	char *progpath = argv[0];
 	char *basename;
 	char *env_debug;
@@ -544,9 +545,32 @@ int main(int argc, char **argv)
 	}
 #endif
 
+	/*
+	 * We have to copy absbasedir, since dirname() will truncate the string
+	 * that is passed in.
+	 */
+	br_outputdir = output_ptr = strdup(absbasedir);
+	if (!br_outputdir) {
+		perror(__FILE__ ": strdup(absbasedir)");
+		return 2;
+	}
+	br_outputdir = dirname(br_outputdir);
+	ret = setenv("BR2_OUTPUTDIR", br_outputdir, 1);
+	if (ret < 0) {
+		perror(__FILE__ ": setenv(BR2_OUTPUTDIR)");
+		goto out;
+	}
+
 	if (execv(exec_args[0], exec_args))
 		perror(path);
 
+out:
+	/*
+	 * Use output_ptr to free the string rather than br_outputdir, since it
+	 * it is possible, albeit unlikely, that dirname() will return a pointer
+	 * to a static buffer.
+	 */
+	free(output_ptr);
 	free(args);
 
 	return 2;
