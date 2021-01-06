@@ -58,6 +58,20 @@ use constant SLEEP_TIME => 5;
 use constant STALE_THRESHOLD => 7 * 24 * 60 * 60; 	# days in seconds
 use constant WORLD_PERMS => (S_IRWXG | S_IRWXO);
 
+use constant LLVM_DISABLE_PKGS => qw(
+	BR2_PACKAGE_CPUFREQUTILS
+	BR2_PACKAGE_DTC
+	BR2_PACKAGE_E2FSPROGS
+	BR2_PACKAGE_ELFUTILS
+	BR2_PACKAGE_GPTFDISK
+	BR2_LINUX_KERNEL_TOOL_PERF
+	BR2_PACKAGE_LINUX_TOOLS_PERF
+	BR2_PACKAGE_PERF
+	BR2_PACKAGE_STRACE
+	BR2_PACKAGE_UTIL_LINUX
+	BR2_PACKAGE_XFSPROGS
+);
+
 my %compiler_map = (
 	'arm64' => 'aarch64-linux-gcc',
 	'arm' => 'arm-linux-gcc',
@@ -673,6 +687,12 @@ sub set_target_toolchain($$$)
 				"Build may fail.\n");
 		}
 		$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_LLVM'} = 'y';
+
+		# Temporarily disable a few packages
+		for my $pkg (LLVM_DISABLE_PKGS) {
+			print("Disabling $pkg due to LLVM...\n");
+			$generic_config{$pkg} = '';
+		}
 	} else {
 		print("WARNING! Couldn't determine GCC version number. ".
 			"Build may fail.\n");
