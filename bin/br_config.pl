@@ -1404,6 +1404,12 @@ if (defined($ENV{'BR_LINUX_OVERRIDE'})) {
 	$local_linux = $ENV{'BR_LINUX_OVERRIDE'};
 }
 
+if (defined($opts{'l'}) && $opts{'l'} !~ m%^(git|ssh|https?)://%) {
+	print(STDERR "$prg: option -l requires a URL for GIT. ".
+		"Did you mean -L?\n");
+	exit(1);
+}
+
 # Command line option -L supersedes environment to specify local Linux directory
 if (defined($opts{'L'})) {
 	# Option "-L -" clears the local Linux directory. This can be used to
