@@ -500,7 +500,6 @@ config BR2_TOOLCHAIN_EXTERNAL_HAS_SSP
 	bool "Toolchain has SSP support?"
 	default y if BR2_TOOLCHAIN_EXTERNAL_GLIBC
 	default y if BR2_TOOLCHAIN_EXTERNAL_MUSL
-	depends on !BR2_TOOLCHAIN_LLVM
 	select BR2_TOOLCHAIN_HAS_SSP
 	help
 	  Select this option if your external toolchain has Stack
