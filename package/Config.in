@@ -10,6 +10,7 @@ menu "Target packages"
 	source "package/skeleton-init-sysv/Config.in"
 
 menu "Broadcom packages"
+	source "package/brcm-ams-tracing/Config.in"
 	source "package/brcm-pm/Config.in"
 	source "package/brcm-skel/Config.in"
 	source "package/brcm-test-modules/Config.in"
