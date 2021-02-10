@@ -45,6 +45,7 @@ use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
 use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
+use constant STB_AMS_TRACING => qw(tools/testing/brcmstb/dvfs-api/tracing);
 use constant STB_CMA_DRIVER => qw(include/linux/brcmstb/cma_driver.h);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant TOOLCHAIN_FILE_CLASSIC => qw(misc/toolchain);
@@ -471,6 +472,13 @@ sub check_cma_driver($)
 	my ($local_linux) = @_;
 
 	return (-r "$local_linux/".STB_CMA_DRIVER);
+}
+
+sub check_ams_tracing($)
+{
+	my ($local_linux) = @_;
+
+	return (-d "$local_linux/".STB_AMS_TRACING);
 }
 
 sub get_cores()
@@ -1616,6 +1624,11 @@ if (defined($local_linux)) {
 	if (!check_cma_driver($local_linux)) {
 		print("Disabling CMATOOL since kernel doesn't support it...\n");
 		$generic_config{'BR2_PACKAGE_CMATOOL'} = '';
+	}
+	if (!check_ams_tracing($local_linux)) {
+		print("Disabling BRCM_AMS_TRACING since kernel doesn't have ".
+			"the tool...\n");
+		$generic_config{'BR2_PACKAGE_BRCM_AMS_TRACING'} = '';
 	}
 
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
