@@ -485,11 +485,18 @@ sub check_feature_remote($$$)
 	return ($ret == 0);
 }
 
-sub check_cma_driver($)
+sub check_cma_driver_local($)
 {
 	my ($local_linux) = @_;
 
 	return (-r "$local_linux/".STB_CMA_DRIVER);
+}
+
+sub check_cma_driver_remote($$)
+{
+	my ($remote, $branch) = @_;
+
+	return check_feature_remote($remote, $branch, STB_CMA_DRIVER);
 }
 
 sub check_ams_tracing_local($)
@@ -1361,6 +1368,7 @@ my $tc_info_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
 my $disable_ams_tracing = 0;
+my $disable_cma_driver = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
@@ -1647,9 +1655,8 @@ if (defined($local_linux)) {
 			"with the build.\n");
 		exit(1);
 	}
-	if (!check_cma_driver($local_linux)) {
-		print("Disabling CMATOOL since kernel doesn't support it...\n");
-		$generic_config{'BR2_PACKAGE_CMATOOL'} = '';
+	if (!check_cma_driver_local($local_linux)) {
+		$disable_cma_driver = 1;
 	}
 	if (!check_ams_tracing_local($local_linux)) {
 		$disable_ams_tracing = 1;
@@ -1692,11 +1699,18 @@ if (defined($local_linux)) {
 			$relative_outputdir);
 	}
 
+	if (!check_cma_driver_remote($linux_git_url, $linux_branch)) {
+		$disable_cma_driver = 1;
+	}
 	if (!check_ams_tracing_remote($linux_git_url, $linux_branch)) {
 		$disable_ams_tracing = 1;
 	}
 }
 
+if ($disable_cma_driver) {
+	print("Disabling CMATOOL since kernel doesn't support it...\n");
+	$generic_config{'BR2_PACKAGE_CMATOOL'} = '';
+}
 if ($disable_ams_tracing) {
 	print("Disabling BRCM_AMS_TRACING; kernel doesn't support it...\n");
 	$generic_config{'BR2_PACKAGE_BRCM_AMS_TRACING'} = '';
