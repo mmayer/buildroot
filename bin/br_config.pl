@@ -45,7 +45,8 @@ use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
 use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
-use constant STB_AMS_TRACING => qw(tools/testing/brcmstb/dvfs-api/tracing);
+use constant STB_AMS_TRACING =>
+	qw(tools/testing/brcmstb/dvfs-api/tracing/Makefile);
 use constant STB_CMA_DRIVER => qw(include/linux/brcmstb/cma_driver.h);
 use constant TOOLCHAIN_DIR => qw(/opt/toolchains);
 use constant TOOLCHAIN_FILE_CLASSIC => qw(misc/toolchain);
@@ -467,6 +468,23 @@ sub check_linux($)
 	return 1;
 }
 
+# The remote repo must have been configured with
+#    git config daemon.uploadarch true
+# in order for "git archive" to work for remote repos.
+sub check_feature_remote($$$)
+{
+	my ($remote, $branch, $feature) = @_;
+	my $ret;
+
+	# "git archive" will download the contents of the specified path from
+	# the remote. So, we make sure to specify a file rather than an entire
+	# directory and a small file a that.
+	$ret = system("git archive --format=tar --remote=$remote $branch ".
+		"$feature >/dev/null 2>&1");
+
+	return ($ret == 0);
+}
+
 sub check_cma_driver($)
 {
 	my ($local_linux) = @_;
@@ -474,11 +492,18 @@ sub check_cma_driver($)
 	return (-r "$local_linux/".STB_CMA_DRIVER);
 }
 
-sub check_ams_tracing($)
+sub check_ams_tracing_local($)
 {
 	my ($local_linux) = @_;
 
-	return (-d "$local_linux/".STB_AMS_TRACING);
+	return (-r "$local_linux/".STB_AMS_TRACING);
+}
+
+sub check_ams_tracing_remote($$)
+{
+	my ($remote, $branch) = @_;
+
+	return check_feature_remote($remote, $branch, STB_AMS_TRACING);
 }
 
 sub get_cores()
@@ -1335,6 +1360,7 @@ my $hash_mode = 0;
 my $tc_info_mode = 0;
 my $ret = 0;
 my $is_64bit = 0;
+my $disable_ams_tracing = 0;
 my $relative_outputdir;
 my $br_outputdir;
 my $br_mirror;
@@ -1625,10 +1651,8 @@ if (defined($local_linux)) {
 		print("Disabling CMATOOL since kernel doesn't support it...\n");
 		$generic_config{'BR2_PACKAGE_CMATOOL'} = '';
 	}
-	if (!check_ams_tracing($local_linux)) {
-		print("Disabling BRCM_AMS_TRACING since kernel doesn't have ".
-			"the tool...\n");
-		$generic_config{'BR2_PACKAGE_BRCM_AMS_TRACING'} = '';
+	if (!check_ams_tracing_local($local_linux)) {
+		$disable_ams_tracing = 1;
 	}
 
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
@@ -1645,6 +1669,9 @@ if (defined($local_linux)) {
 		}
 	}
 } else {
+	my $linux_git_url = get_linux_remote();
+	my $linux_branch =
+		$generic_config{'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION'};
 	my $linux_remote_resolves = resolve_linux_remote();
 
 	# Delete our custom makefile, so we don't override the Linux directory.
@@ -1664,6 +1691,15 @@ if (defined($local_linux)) {
 		$kernel_frag_files = get_linux_sha_remote($kernel_frag_files,
 			$relative_outputdir);
 	}
+
+	if (!check_ams_tracing_remote($linux_git_url, $linux_branch)) {
+		$disable_ams_tracing = 1;
+	}
+}
+
+if ($disable_ams_tracing) {
+	print("Disabling BRCM_AMS_TRACING; kernel doesn't support it...\n");
+	$generic_config{'BR2_PACKAGE_BRCM_AMS_TRACING'} = '';
 }
 
 $inline_kernel_frag_file = $relative_outputdir."/".KERNEL_FRAG_FILE;
