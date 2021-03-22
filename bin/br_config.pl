@@ -702,6 +702,7 @@ sub set_target_toolchain($$$)
 		my $stbgcc;
 		my ($gcc_major, $gcc_minor, $gcc_patch);
 		my ($major, $minor, $patch) = ($1, $2, $3);
+		my $llvm_ver_str = "BR2_TOOLCHAIN_EXTERNAL_LLVM_$major";
 
 		$stbgcc = "$gcc_dir/bin/".$compiler_map{$arch};
 		$gcc_version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
@@ -720,6 +721,7 @@ sub set_target_toolchain($$$)
 				"Build may fail.\n");
 		}
 		$toolchain_config{$arch}{'BR2_TOOLCHAIN_EXTERNAL_LLVM'} = 'y';
+		$toolchain_config{$arch}{$llvm_ver_str} = 'y';
 
 		# Temporarily disable a few packages
 		for my $pkg (LLVM_DISABLE_PKGS) {
