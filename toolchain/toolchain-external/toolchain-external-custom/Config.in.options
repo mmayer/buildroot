@@ -125,6 +125,14 @@ choice
 	  Set to the llvm version that is used by your external
 	  toolchain.
 
+config BR2_TOOLCHAIN_EXTERNAL_LLVM_12
+	bool "12.x"
+	select BR2_TOOLCHAIN_LLVM_AT_LEAST_12
+
+config BR2_TOOLCHAIN_EXTERNAL_LLVM_11
+	bool "11.x"
+	select BR2_TOOLCHAIN_LLVM_AT_LEAST_11
+
 config BR2_TOOLCHAIN_EXTERNAL_LLVM_10
 	bool "10.x"
 	select BR2_TOOLCHAIN_LLVM_AT_LEAST_10
