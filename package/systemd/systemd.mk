@@ -33,6 +33,8 @@ SYSTEMD_CONF_OPTS += \
 	-Ddefault-hierarchy=hybrid \
 	-Didn=true \
 	-Dima=false \
+	-Dkexec-path=/usr/sbin/kexec \
+	-Dkmod-path=/usr/bin/kmod \
 	-Dldconfig=false \
 	-Dloadkeys-path=/usr/bin/loadkeys \
 	-Dman=false \
@@ -54,14 +56,15 @@ SYSTEMD_CONF_OPTS += \
 
 ifeq ($(BR2_ROOTFS_MERGED_USR),y)
 SYSTEMD_CONF_OPTS += \
-	-Dkexec-path=/usr/sbin/kexec \
-	-Dkmod-path=/usr/bin/kmod \
 	-Dmount-path=/usr/bin/mount \
 	-Dsulogin-path=/usr/sbin/sulogin \
 	-Dumount-path=/usr/bin/umount
 else
 SYSTEMD_CONF_OPTS += \
-	-Dsplit-usr=true
+	-Dmount-path=/bin/mount \
+	-Dsplit-usr=true \
+	-Dsulogin-path=/sbin/sulogin \
+	-Dumount-path=/bin/umount
 endif
 
 ifeq ($(BR2_PACKAGE_ACL),y)
