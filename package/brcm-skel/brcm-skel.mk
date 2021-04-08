@@ -18,7 +18,7 @@ BRCM_SKEL_DEPENDENCIES = initscripts busybox
 else
 # Don't install rcS if we have neither INIT_BUSYBOX nor INIT_SYSV
 ifeq ($(BR2_INIT_SYSV),)
-INSTALL_EXCLUDE = --exclude init.d
+BRCM_SKEL_INSTALL_EXCLUDE = --exclude init.d
 endif
 endif
 
@@ -32,7 +32,7 @@ endef
 
 define BRCM_SKEL_INSTALL_TARGET_CMDS
 	rsync -a --exclude .gitignore \
-		$(INSTALL_EXCLUDE) \
+		$(BRCM_SKEL_INSTALL_EXCLUDE) \
 		$(@D)/skel/ $(TARGET_DIR)
 endef
 
