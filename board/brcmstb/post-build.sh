@@ -14,6 +14,9 @@ output_path=`dirname "$image_path"`
 dot_config="${output_path}/.config"
 local_config="${output_path}/local.mk"
 
+# References a file used by systemd
+serial_getty="${TARGET_DIR}/lib/systemd/system/serial-getty@.service"
+
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
 
@@ -27,11 +30,16 @@ if ! grep /bin/sh ${TARGET_DIR}/etc/shells >/dev/null; then
 	echo "/bin/sh" >>${TARGET_DIR}/etc/shells
 fi
 
-# Auto-login on serial console
+# Auto-login on serial console for classic sysvinit
 if [ -e ${TARGET_DIR}/etc/inittab ]; then
 	echo "Enabling auto-login on serial console..."
 	sed -i 's|.* # GENERIC_SERIAL$|::respawn:/bin/cttyhack /bin/sh -l|' \
 		${TARGET_DIR}/etc/inittab
+fi
+
+# Auto-login on serial console for systemd
+if [ -e ${serial_getty} ]; then
+	sed -i 's|^ExecStart=-/sbin/agetty|& --autologin root|' ${serial_getty}
 fi
 
 if ls ${board_dir}/dropbear_*_host_key >/dev/null 2>&1; then
