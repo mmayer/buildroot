@@ -1239,6 +1239,35 @@ sub get_32bit_runtime($$$)
 	}
 }
 
+sub get_br_ccache($)
+{
+	my ($opts_X) = @_;
+	my $br_ccache;
+
+	if (defined($ENV{'BR_CCACHE'})) {
+		$br_ccache = $ENV{'BR_CCACHE'};
+	}
+	if (defined($opts_X)) {
+		$br_ccache = $opts_X;
+	}
+	if (defined($br_ccache)) {
+		if ($br_ccache eq '-') {
+			$generic_config{'BR2_CCACHE'} = '';
+		} else {
+			$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
+		}
+	} else {
+		$br_ccache = get_ccache_dir(SHARED_CCACHE);
+		$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
+		if ($br_ccache eq SHARED_CCACHE) {
+			$generic_config{'BR2_CCACHE_INITIAL_SETUP'} =
+				"-M 10G -o 'umask=0'";
+		}
+	}
+
+	return $br_ccache;
+}
+
 sub get_br_mirror($)
 {
 	my ($opts_M) = @_;
@@ -1533,28 +1562,11 @@ if (defined($opts{'o'})) {
 # Our temporary defconfig goes in the output directory.
 $temp_config = "$br_outputdir/$temp_config";
 
-if (defined($ENV{'BR_CCACHE'})) {
-	$br_ccache = $ENV{'BR_CCACHE'};
-}
-if (defined($opts{'X'})) {
-	$br_ccache = $opts{'X'};
-}
+$br_ccache = get_br_ccache($opts{'X'});
 if (defined($br_ccache)) {
-	if ($br_ccache eq '-') {
-		print("Not using CCACHE to build...\n");
-		$generic_config{'BR2_CCACHE'} = '';
-	} else {
-		print("Using custom CCACHE cache $br_ccache...\n");
-		$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
-	}
+	print("Using custom CCACHE $br_ccache...\n");
 } else {
-	$br_ccache = get_ccache_dir(SHARED_CCACHE);
-	print("Using CCACHE with cache $br_ccache...\n");
-	$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
-	if ($br_ccache eq SHARED_CCACHE) {
-		$generic_config{'BR2_CCACHE_INITIAL_SETUP'} =
-			"-M 10G -o 'umask=0'";
-	}
+	print("Not using CCACHE to build...\n");
 }
 
 $kernel_frag_files = $opts{'F'} || '';
