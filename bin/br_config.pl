@@ -1239,6 +1239,34 @@ sub get_32bit_runtime($$$)
 	}
 }
 
+sub get_br_mirror($)
+{
+	my ($opts_M) = @_;
+	my $br_mirror;
+
+	# Set custom Buildroot mirror
+	if (defined($ENV{'BR_MIRROR'})) {
+		$br_mirror = $ENV{'BR_MIRROR'};
+	}
+
+	# Command line option -M supersedes environment to specify mirror
+	if (defined($opts_M)) {
+		# Option "-M -" disables using a mirror. This overrides the
+		# environment variable BR_MIRROR and the built-in default.
+		$br_mirror = $opts_M;
+	}
+
+	if (!defined($br_mirror)) {
+		$br_mirror = get_br_mirror_host();
+	}
+
+	if (defined($br_mirror) && $br_mirror ne '-') {
+		$generic_config{'BR2_PRIMARY_SITE'} = $br_mirror;
+	}
+
+	return $br_mirror;
+}
+
 sub run_clean_mode($$)
 {
 	my ($prg, $br_outputdir) = @_;
@@ -1796,25 +1824,9 @@ if (defined($kernel_header_version)) {
 		"fail\n");
 }
 
-# Set custom Buildroot mirror
-if (defined($ENV{'BR_MIRROR'})) {
-	$br_mirror = $ENV{'BR_MIRROR'};
-}
-
-# Command line option -M supersedes environment to specify mirror
-if (defined($opts{'M'})) {
-	# Option "-M -" disables using a mirror. This overrides the environment
-	# variable BR_MIRROR and the built-in default.
-	$br_mirror = $opts{'M'};
-}
-
-if (!defined($br_mirror)) {
-	$br_mirror = get_br_mirror_host();
-}
-if (defined($br_mirror) && $br_mirror ne '-') {
+$br_mirror = get_br_mirror($opts{'M'});
+if (defined($br_mirror)) {
 	print("Using $br_mirror as Buildroot mirror...\n");
-	$generic_config{'BR2_PRIMARY_SITE'} = $br_mirror;
-
 } else {
 	print("Not using a Buildroot mirror...\n");
 }
