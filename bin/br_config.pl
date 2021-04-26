@@ -1409,6 +1409,10 @@ sub print_usage($)
 		"          -t <path>....use <path> as toolchain directory\n".
 		"          -v <tag>.....use <tag> as Linux version tag\n".
 		"          -X <path>....use <path> as CCACHE ('-' for none)\n");
+	print(STDERR "\nEnvironment Variables:\n".
+		"          BR_CCACHE............CCACHE directory (like -X)\n".
+		"          BR_LINUX_OVERRIDE....Linux directory (like -L)\n".
+		"          BR_MIRROR............BR mirror (like -M)\n");
 }
 
 ########################################
