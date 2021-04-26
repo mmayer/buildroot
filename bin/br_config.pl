@@ -1894,8 +1894,8 @@ if (defined($opts{'i'})) {
 	$ret = system("make O=\"$br_outputdir\"");
 	$ret >>= 8;
 } else {
-	print("To build it, run the following commands:\n".
-	"\tcd $br_outputdir; make\n");
+	print("To build it, run the following command:\n".
+	"\tmake -C $relative_outputdir\n");
 }
 
 print(STDERR "$prg: exiting with code $ret\n") if ($ret > 0);
