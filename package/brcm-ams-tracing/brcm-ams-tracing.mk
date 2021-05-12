@@ -16,11 +16,12 @@ define BRCM_AMS_TRACING_BUILD_CMDS
 	fi
 
 	$(TARGET_MAKE_ENV) \
+		BUILD=$(KERNEL_ARCH) \
 		$(MAKE) -C $(BRCM_AMS_KERNEL_DIR) $(TARGET_CONFIGURE_OPTS)
 endef
 
 define BRCM_AMS_TRACING_INSTALL_TARGET_CMDS
-	$(INSTALL) -D -m 0755 $(BRCM_AMS_KERNEL_DIR)/trace_host \
+	$(INSTALL) -D -m 0755 $(BRCM_AMS_KERNEL_DIR)/trace \
 		$(TARGET_DIR)/usr/bin/brcm_ams_trace
 endef
 
