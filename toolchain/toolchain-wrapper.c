@@ -63,12 +63,16 @@ static char *predef_args[] = {
 #endif
 	path,
 /* Skip passing --sysroot and -mabi if we are using LLVM */
-#ifndef BR_LLVM
+#ifdef BR_LLVM
+#if defined(BR2_RELRO_PARTIAL) || defined(BR2_RELRO_FULL)
+	"-Wno-unused-command-line-argument",
+#endif
+#else /* !BR_LLVM */
 	"--sysroot", sysroot,
 #ifdef BR_ABI
 	"-mabi=" BR_ABI,
 #endif
-#endif
+#endif /* !BR_LLVM */
 #ifdef BR_NAN
 	"-mnan=" BR_NAN,
 #endif
