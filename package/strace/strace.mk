@@ -12,6 +12,12 @@ STRACE_LICENSE_FILES = COPYING LGPL-2.1-or-later
 STRACE_CPE_ID_VENDOR = strace_project
 STRACE_CONF_OPTS = --enable-mpers=no
 
+ifeq ($(BR2_TOOLCHAIN_LLVM),y)
+# ARM/ARM64 don't use print_sigmask_addr_size() from sigreturn.c. LLVM doesn't
+# like it.
+STRACE_CONF_ENV += CFLAGS="-Wno-unused-function"
+endif
+
 ifeq ($(BR2_PACKAGE_LIBUNWIND),y)
 STRACE_DEPENDENCIES += libunwind
 STRACE_CONF_OPTS += --with-libunwind
