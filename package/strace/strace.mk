@@ -13,10 +13,15 @@ STRACE_CPE_ID_VENDOR = strace_project
 STRACE_CONF_OPTS = --enable-mpers=no
 
 ifeq ($(BR2_TOOLCHAIN_LLVM),y)
+
 # ARM/ARM64 don't use print_sigmask_addr_size() from sigreturn.c. LLVM doesn't
 # like it.
 STRACE_CONF_ENV += CFLAGS="-Wno-unused-function"
-endif
+
+STRACE_CONF_OPTS += --without-libunwind
+STRACE_CONF_OPTS += --without-libiberty
+
+else # !BR2_TOOLCHAIN_LLVM
 
 ifeq ($(BR2_PACKAGE_LIBUNWIND),y)
 STRACE_DEPENDENCIES += libunwind
@@ -32,6 +37,8 @@ STRACE_CONF_OPTS += --with-libiberty=check
 else
 STRACE_CONF_OPTS += --without-libiberty
 endif
+
+endif # !BR2_TOOLCHAIN_LLVM
 
 ifeq ($(BR2_PACKAGE_PERL),)
 define STRACE_REMOVE_STRACE_GRAPH
