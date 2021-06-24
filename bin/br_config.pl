@@ -43,8 +43,8 @@ use constant LLVM_MIN_KERNEL => qw(5.4);
 use constant LLVM_WRAPPER => qw(llvm-wrapper.pl);
 use constant MERGED_FRAGMENT => qw(merged_fragment);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
-use constant SHARED_CCACHE => qw(/local/users/stbdev/buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
+use constant SHARED_CCACHE =>  SHARED_OSS_DIR . qw(/buildroot-ccache);
 use constant STB_AMS_TRACING =>
 	qw(tools/testing/brcmstb/dvfs-api/tracing/Makefile);
 use constant STB_CMA_DRIVER => qw(include/linux/brcmstb/cma_driver.h);
