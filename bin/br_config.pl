@@ -1253,9 +1253,9 @@ sub get_br_ccache($)
 	if (defined($br_ccache)) {
 		if ($br_ccache eq '-') {
 			$generic_config{'BR2_CCACHE'} = '';
-		} else {
-			$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
+			return undef;
 		}
+		$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
 	} else {
 		$br_ccache = get_ccache_dir(SHARED_CCACHE);
 		$generic_config{'BR2_CCACHE_DIR'} = $br_ccache;
@@ -1568,7 +1568,7 @@ $temp_config = "$br_outputdir/$temp_config";
 
 $br_ccache = get_br_ccache($opts{'X'});
 if (defined($br_ccache)) {
-	print("Using custom CCACHE $br_ccache...\n");
+	print("Using CCACHE $br_ccache...\n");
 } else {
 	print("Not using CCACHE to build...\n");
 }
