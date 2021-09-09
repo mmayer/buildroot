@@ -512,6 +512,54 @@ sub check_ams_tracing_remote($$)
 	return check_feature_remote($remote, $branch, STB_AMS_TRACING);
 }
 
+sub get_linux_ver_stream($)
+{
+	my ($stream) = @_;
+	my ($major, $minor, $patch);
+	my $line;
+
+	while ($line = <$stream>) {
+		chomp($line);
+		if ($line =~ /^VERSION\s+=\s+(\d+)$/) {
+			$major = int($1);
+		} elsif ($line =~ /^PATCHLEVEL\s+=\s+(\d+)$/) {
+			$minor = int($1);
+		} elsif ($line =~ /^SUBLEVEL\s+=\s+(\d+)$/) {
+			$patch = int($1);
+			return ($major, $minor, $patch);
+		}
+	}
+	return ();
+}
+
+sub get_linux_ver_local($)
+{
+	my ($local_linux) = @_;
+	my $makefile = "$local_linux/Makefile";
+	my @ver;
+	my $fh;
+
+	open($fh, $makefile);
+	@ver = get_linux_ver_stream($fh);
+	close($fh);
+
+	return @ver;
+}
+
+sub get_linux_ver_remote($$)
+{
+	my ($remote, $branch) = @_;
+	my @ver;
+	my $pipe;
+
+	open($pipe, "git archive --format=tar --remote=$remote $branch ".
+		"Makefile | tar -x -f- -O |");
+	@ver = get_linux_ver_stream($pipe);
+	close($pipe);
+
+	return @ver;
+}
+
 sub get_cores()
 {
 	my $num_cores;
@@ -1421,6 +1469,7 @@ sub print_usage($)
 my $prg = basename($0);
 
 my @orig_cmdline = @ARGV;
+my @linux_ver;
 my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
@@ -1706,6 +1755,7 @@ if (defined($local_linux)) {
 	if (!check_ams_tracing_local($local_linux)) {
 		$disable_ams_tracing = 1;
 	}
+	@linux_ver = get_linux_ver_local($local_linux);
 
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
 	write_localmk($prg, $relative_outputdir);
@@ -1750,8 +1800,16 @@ if (defined($local_linux)) {
 	if (!check_ams_tracing_remote($linux_git_url, $linux_branch)) {
 		$disable_ams_tracing = 1;
 	}
+	@linux_ver = get_linux_ver_remote($linux_git_url, $linux_branch);
 }
 
+if (!defined($linux_ver[0])) {
+	print(STDERR "$prg: couldn't determine version of Linux kernel\n");
+	exit(1);
+}
+
+printf("Target kernel is %d.%d.%d...\n", $linux_ver[0], $linux_ver[1],
+	$linux_ver[2]);
 if ($disable_cma_driver) {
 	print("Disabling CMATOOL since kernel doesn't support it...\n");
 	$generic_config{'BR2_PACKAGE_CMATOOL'} = '';
