@@ -1818,6 +1818,10 @@ if ($disable_ams_tracing) {
 	print("Disabling BRCM_AMS_TRACING; kernel doesn't support it...\n");
 	$generic_config{'BR2_PACKAGE_BRCM_AMS_TRACING'} = '';
 }
+if ($linux_ver[0] < 5 || ($linux_ver[0] == 5 && $linux_ver[1] < 1)) {
+	print("Disabling ubihealthd for Linux < 5.1...\n");
+	$generic_config{'BR2_PACKAGE_MTD_UBIHEALTHD'} = '';
+}
 
 $inline_kernel_frag_file = $relative_outputdir."/".KERNEL_FRAG_FILE;
 if (defined($opts{'R'})) {
