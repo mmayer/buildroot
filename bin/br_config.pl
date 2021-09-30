@@ -117,6 +117,17 @@ my %generic_config = (
 	'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION' => 'stb-4.9',
 );
 
+sub get_stb_version_from_str($)
+{
+	my ($s) = @_;
+
+	if ($s =~ /^(\S+)-(\d+)\.(\d+)-(\d+)\.(\d+)$/) {
+		return [$1, $2, $3, $4, $5];
+	}
+
+	return undef;
+}
+
 sub check_br()
 {
 	my $readme = 'README';
@@ -174,6 +185,34 @@ sub fix_shared_permissions($)
 		}
 	}
 	closedir($dh);
+}
+
+# Sorts version strings of the form x.y-a.b numerically. The leftmost digit that
+# is different between the two version strings determines the outcome.
+#     stbgcc-11.0-0.1 > stbgcc-8.3-0.4 > stbgcc-8.3-0.3 > stbgcc-6.3-1.8
+# If one of the version strings can't be broken down into the x.y-a-b format, a
+# regular string comparison is performed.
+sub stbver_sort($$)
+{
+	my ($my_a, $my_b) = @_;
+	my $a_ver = get_stb_version_from_str($my_a);
+	my $b_ver = get_stb_version_from_str($my_b);
+	my $ret;
+
+	# Fall back to lexical comparison
+	if (!defined($a_ver) || !defined($b_ver)) {
+		return $my_a cmp $my_b;
+	}
+
+	# The first array element is the name (e.g. stbgcc or stbllvm). Skip
+	# that for the time being.
+	for (my $i = 1; $i <= $#$a_ver; $i++) {
+		if ($a_ver->[$i] != $b_ver->[$i]) {
+			return $a_ver->[$i] <=> $b_ver->[$i];
+		}
+	}
+
+	return 0;
 }
 
 sub get_ccache_dir($)
@@ -673,14 +712,14 @@ sub get_libc($$)
 
 sub find_toolchain($)
 {
-	my ($toolchain_ver) = @_;
+	my ($toolchain) = @_;
 	my @path = split(/:/, $ENV{'PATH'});
 	my @toolchains;
 	my $dh;
 
 	foreach my $dir (@path) {
-		# We don't support anything before stbgcc-6.x at this point.
-		if ($dir =~ /stbgcc-[6-9]/ && $dir =~ $toolchain_ver) {
+		# We don't support anything before stbgcc-6.x.
+		if ($dir =~ /stbgcc-([6-9]|\d{2,})\./ && $dir =~ $toolchain) {
 			$dir =~ s|/bin/?$||;
 			# Only use the directory if it actually exists.
 			if (-d $dir) {
@@ -698,8 +737,8 @@ sub find_toolchain($)
 	# directory must end with a digit (e.g. stbgcc-6.3-1.7). This excludes
 	# development toolchains that may have a suffix after the version number
 	# from being searched automatically.
-	@toolchains = sort { $b cmp $a }
-		grep { /stbgcc-[6-9].*\d$/ } readdir($dh);
+	@toolchains = sort { stbver_sort($b, $a) }
+		grep { /stbgcc-([6-9]|\d{2,})\..*\d$/ } readdir($dh);
 	closedir($dh);
 
 	foreach my $dir (@toolchains) {
@@ -707,8 +746,7 @@ sub find_toolchain($)
 
 		# If the toolchain version matches or if the version is empty,
 		# return the toolchain, provided the "bin" directory exists.
-		if (-d "$d/bin" && ($dir =~ $toolchain_ver ||
-		    $toolchain_ver eq '')) {
+		if (-d "$d/bin" && ($dir =~ $toolchain || $toolchain eq '')) {
 			return $d;
 		}
 	}
