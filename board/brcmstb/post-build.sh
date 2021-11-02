@@ -17,6 +17,11 @@ local_config="${output_path}/local.mk"
 # References a file used by systemd
 serial_getty="${TARGET_DIR}/lib/systemd/system/serial-getty@.service"
 
+# Clean up; some files we don't need are installed by default
+rm -f ${TARGET_DIR}/etc/init.d/rcK \
+	${TARGET_DIR}/etc/init.d/S[0-9]*
+
+# Tweak some default settings
 sed -i 's|$(cat $DT_DIR|$(tr -d "\\0" <$DT_DIR|' \
 	${TARGET_DIR}/etc/config/ifup.default
 
