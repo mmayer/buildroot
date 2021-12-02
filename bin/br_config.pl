@@ -698,12 +698,15 @@ sub get_libc($$)
 {
 	my ($toolchain, $arch) = @_;
 	my $full_path = "$toolchain/bin/".$compiler_map{$arch};
-	my $compiler = readlink($full_path);
+	my $target = `$full_path -v 2>&1 | grep '^Target:'`;
 
-	if (!defined($compiler)) {
+	if ($target =~ /^Target:\s+(\S+)/) {
+		$target = $1;
+	} else {
 		return undef;
 	}
-	if ($compiler =~ /(musl|uclibc)/) {
+
+	if ($target =~ /(musl|uclibc)/) {
 		return $1;
 	}
 
