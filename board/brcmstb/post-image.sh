@@ -69,9 +69,11 @@ rm -rf "${target_debug}"
 mkdir "${target_debug}"
 echo "Copying vmlinux & co to aid debugging if needed..."
 # Exclude vmlinux.o, but copy other vmlinux files
-vmlinux_star=`ls "${linux_dir}/"vmlinux* | fgrep -v vmlinux.o`
-# No quotes for $vmlinux_star, since it can be a list of files.
-cp -p ${vmlinux_star} "${target_debug}"
+for f in `ls "${linux_dir}/"vmlinux* | fgrep -v vmlinux.o`; do
+	b=`basename "${f}"`
+	n=`echo "${b}" | sed -e "s/vmlinux/vmlinux-${arch}/"`
+	cp -p "${f}" "${target_debug}/${n}"
+done
 
 echo "Creating NFS tar-ball..."
 # We need fakeroot, so mknod doesn't complain.
