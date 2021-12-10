@@ -1090,6 +1090,14 @@ sub parse_cmdline_fragments($$)
 			# quote at the end is the same as at the beginning.
 			$frag =~ s/^(["'])(.*)\1$/$2/;
 		}
+		# Quote the string value of the fragment. Boolean and integer
+		# values do not need quotes.
+		if ($frag =~ /^(\w+)=([^"].*)/) {
+			my ($var, $val) = ($1, $2);
+			if ($val ne 'y' && $val =~ /\D/) {
+				$frag = "$var=\"$val\"";
+			}
+		}
 		print(F "$frag\n");
 	}
 	close(F);
