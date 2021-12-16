@@ -42,6 +42,7 @@ use constant HTTP_USER_AGENT => q(BRCMSTB/br_config.pl );
 use constant LLVM_MIN_KERNEL => qw(5.4);
 use constant LLVM_WRAPPER => qw(llvm-wrapper.pl);
 use constant MERGED_FRAGMENT => qw(merged_fragment);
+use constant OVERLAY_DIR => qw(board/brcmstb/overlay);
 use constant PRIVATE_CCACHE => qw($(HOME)/.buildroot-ccache);
 use constant SHARED_OSS_DIR => qw(/projects/stbdev/open-source);
 use constant SHARED_CCACHE =>  SHARED_OSS_DIR . qw(/buildroot-ccache);
@@ -1956,6 +1957,11 @@ if (defined($br_mirror)) {
 	print("Using $br_mirror as Buildroot mirror...\n");
 } else {
 	print("Not using a Buildroot mirror...\n");
+}
+
+if (-d OVERLAY_DIR) {
+	print("Found overlay directory ".OVERLAY_DIR."...\n");
+	$generic_config{'BR2_ROOTFS_OVERLAY'} = OVERLAY_DIR;
 }
 
 get_32bit_runtime($arch, $toolchain, $opts{'3'}) if ($is_64bit);
