@@ -455,6 +455,10 @@ HOST_DIR := $(call qstrip,$(BR2_HOST_DIR))
 TARGET_DIR = $(if $(ROOTFS),$(ROOTFS_$(ROOTFS)_TARGET_DIR),$(BASE_TARGET_DIR))
 endif
 
+ifneq ($(BR2_ROOTFS_LIB_DIR),)
+ROOTFS_LIB_DIR := $(call qstrip,$(BR2_ROOTFS_LIB_DIR))
+endif
+
 ifneq ($(HOST_DIR),$(BASE_DIR)/host)
 HOST_DIR_SYMLINK = $(BASE_DIR)/host
 $(HOST_DIR_SYMLINK): | $(BASE_DIR)
