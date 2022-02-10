@@ -71,7 +71,7 @@ E2FSPROGS_CONF_ENV += ac_cv_func_fallocate=no
 endif
 
 E2FSPROGS_CONF_ENV += ac_cv_path_LDCONFIG=true
-E2FSPROGS_CONF_ENV += PKG_CONFIG_PATH="$(TARGET_DIR)/usr/$(BR2_ROOTFS_LIB_DIR)/pkgconfig"
+E2FSPROGS_CONF_ENV += PKG_CONFIG_PATH="$(TARGET_DIR)/usr/$(ROOTFS_LIB_DIR)/pkgconfig"
 
 HOST_E2FSPROGS_CONF_ENV += ac_cv_path_LDCONFIG=true
 
