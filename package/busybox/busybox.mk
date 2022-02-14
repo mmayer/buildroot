@@ -79,14 +79,15 @@ BUSYBOX_DEPENDENCIES = \
 # to assume that the patches haven't been ported yet (but need to be), and we
 # need to alert the user to that fact.
 define BRCMSTB_PATCHES
-	$(Q)bbox_brcm_patches="$(PKGDIR)brcmstb-$(BUSYBOX_VERSION)"; \
+	$(Q)bbox_prefix="$(PKGDIR)brcmstb-patches/v"; \
+	bbox_brcm_patches="$${bbox_prefix}$(BUSYBOX_VERSION)"; \
 	if [ ! -d "$${bbox_brcm_patches}" ]; then \
 		maj_ver=`echo "$(BUSYBOX_VERSION)" | cut -d. -f1-2`; \
 		patch_ver=`echo "$(BUSYBOX_VERSION)" | cut -d. -f3`; \
 		while [ $${patch_ver} -gt 0 ]; do \
 			patch_ver=`expr $${patch_ver} - 1`; \
 			prev_ver=$${maj_ver}.$${patch_ver}; \
-			bbox_brcm_patches="$(PKGDIR)brcmstb-$${prev_ver}"; \
+			bbox_brcm_patches="$${bbox_prefix}$${prev_ver}"; \
 			if [ -d "$${bbox_brcm_patches}" ]; then \
 				break; \
 			fi; \
@@ -95,7 +96,7 @@ define BRCMSTB_PATCHES
 	if [ -d "$${bbox_brcm_patches}" ]; then \
 		echo "Found patch dir $${bbox_brcm_patches}."; \
 		$(APPLY_PATCHES) $(@D) "$${bbox_brcm_patches}" \*; \
-	elif ls $(PKGDIR)brcmstb-* >/dev/null 2>&1; then \
+	elif [ -d $(PKGDIR)brcmstb-patches ]; then \
 		echo "ERROR: couldn't find STB patches for this release!" 1>&2; \
 		exit 1; \
 	fi
