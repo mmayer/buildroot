@@ -214,7 +214,10 @@ endif
 # arguments to the binutils tools. Those are paths to necessary linker
 # plugins.
 ifeq ($(BR2_TOOLCHAIN_GCC_AT_LEAST_4_7),y)
+# Don't use the GCC wrappers with LLVM.
+ifeq ($(BR2_TOOLCHAIN_EXTERNAL_LLVM),)
 TARGET_GCC_WRAPPERS_PREFIX = gcc-
+endif
 endif
 
 # Define TARGET_xx variables for all common binutils/gcc
