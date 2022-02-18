@@ -28,6 +28,12 @@ use LWP::UserAgent;
 use POSIX;
 use Socket;
 
+# Environment variables
+use constant BR_CCACHE => qw(BR_CCACHE);
+use constant BR_LINUX_OVERRIDE => qw(BR_LINUX_OVERRIDE);
+use constant BR_MIRROR => qw(BR_MIRROR);
+
+# Config files
 use constant AUTO_MK => qw(brcmstb.mk);
 use constant LOCAL_MK => qw(local.mk);
 use constant BR_FRAG_FILE => qw(br_fragments.cfg);
@@ -1341,8 +1347,8 @@ sub get_br_ccache($)
 	my ($opts_X) = @_;
 	my $br_ccache;
 
-	if (defined($ENV{'BR_CCACHE'})) {
-		$br_ccache = $ENV{'BR_CCACHE'};
+	if (defined($ENV{BR_CCACHE})) {
+		$br_ccache = $ENV{BR_CCACHE};
 	}
 	if (defined($opts_X)) {
 		$br_ccache = $opts_X;
@@ -1371,8 +1377,8 @@ sub get_br_mirror($)
 	my $br_mirror;
 
 	# Set custom Buildroot mirror
-	if (defined($ENV{'BR_MIRROR'})) {
-		$br_mirror = $ENV{'BR_MIRROR'};
+	if (defined($ENV{BR_MIRROR})) {
+		$br_mirror = $ENV{BR_MIRROR};
 	}
 
 	# Command line option -M supersedes environment to specify mirror
@@ -1596,8 +1602,8 @@ if (defined($opts{'3'}) && !$is_64bit) {
 }
 
 # Set local Linux directory from environment, if configured.
-if (defined($ENV{'BR_LINUX_OVERRIDE'})) {
-	$local_linux = $ENV{'BR_LINUX_OVERRIDE'};
+if (defined($ENV{BR_LINUX_OVERRIDE})) {
+	$local_linux = $ENV{BR_LINUX_OVERRIDE};
 }
 
 if (defined($opts{'l'}) && $opts{'l'} !~ m%^(git|ssh|https?)://%) {
