@@ -1267,7 +1267,7 @@ sub print_host_info($$)
 	my $host_os_ver = `lsb_release -d 2>/dev/null`;
 	my $host_perl_ver = `perl -v | grep '^This is'`;
 	my $stb_release = get_stbrelease_string($local_linux);
-	my @br_vars = grep { /^BR_/ } keys(%ENV);
+	my @br_vars = sort(grep { /^BR_/ } keys(%ENV));
 	my $host_addr;
 
 	chomp($host_name);
