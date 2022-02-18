@@ -1258,9 +1258,9 @@ sub write_config($$$)
 	close(F);
 }
 
-sub print_host_info($$)
+sub print_host_info($$$)
 {
-	my ($orig_cmdline, $local_linux) = @_;
+	my ($orig_cmdline, $local_linux, $opt_l) = @_;
 	my $host_gcc_ver = `gcc -v 2>&1 | grep '^gcc'`;
 	my $host_kernel_ver = `uname -r`;
 	my $host_name = `hostname -f 2>/dev/null`;
@@ -1286,6 +1286,9 @@ sub print_host_info($$)
 	print("Host environment:\n") if ($#br_vars >= 0);
 	foreach my $key (@br_vars) {
 		print("\t$key = ".$ENV{$key}."\n");
+		if ($key eq BR_LINUX_OVERRIDE && defined($opt_l)) {
+			print("\t  -> ignored due to \"-l\"\n");
+		}
 	}
 
 	print("Command line is \"@$orig_cmdline\"...\n");
@@ -1601,8 +1604,9 @@ if (defined($opts{'3'}) && !$is_64bit) {
 		"platforms.\n");
 }
 
-# Set local Linux directory from environment, if configured.
-if (defined($ENV{BR_LINUX_OVERRIDE})) {
+# Set local Linux directory from environment, if configured. However, we must
+# ignore BR_LINUX_OVERRIDE if "-l <repo-url>" is specified or it'll interfere.
+if (defined($ENV{BR_LINUX_OVERRIDE}) && !defined($opts{'l'})) {
 	$local_linux = $ENV{BR_LINUX_OVERRIDE};
 }
 
@@ -1661,7 +1665,7 @@ run_clean_mode($prg, $br_outputdir) if ($clean_mode);
 run_hash_mode($prg, $arch, $br_outputdir) if ($hash_mode);
 
 # This information may help troubleshoot build problems.
-print_host_info(\@orig_cmdline, $local_linux);
+print_host_info(\@orig_cmdline, $local_linux, $opts{'l'});
 
 if (defined($opts{'o'})) {
 	print("Using ".$opts{'o'}." as output directory...\n");
