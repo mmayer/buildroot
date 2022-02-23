@@ -54,7 +54,7 @@ brcmstb-tarball:
 	@echo "Wiping $(BRCMSTB_OUTPUT_DIR)..."
 	rm -rf $(BRCMSTB_OUTPUT_DIR)
 	test -d $(SRC_DST) || mkdir -p $(SRC_DST)
-	@if [ -d .git ]; then \
+	$(Q)if [ -d .git ]; then \
 		echo "Using git archive to generate buildroot tar-ball..."; \
 		git archive --prefix=buildroot/ \
 			--output=$(SRC_DST)/buildroot-$(DOTVERSION).tar HEAD; \
@@ -87,7 +87,7 @@ brcmstb-diffs: brcmstb-tarball
 linux-release:
 	test -d $(SRC_DST) || mkdir -p $(SRC_DST)
 	rm -f $(SRC_DST)/stblinux-$(DOTVERSION).tar.bz2
-	@if [ -d $(BRCMSTB_LINUX_DIR)/.git ]; then \
+	$(Q)if [ -d $(BRCMSTB_LINUX_DIR)/.git ]; then \
 		echo "Using git archive to generate kernel tar-ball..."; \
 		git --git-dir=$(BRCMSTB_LINUX_DIR)/.git \
 			archive --prefix=linux/ --format=tar HEAD | \
