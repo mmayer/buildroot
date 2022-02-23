@@ -30,6 +30,7 @@ use Socket;
 
 # Environment variables
 use constant BR_CCACHE => qw(BR_CCACHE);
+use constant BR_DEFCONFIG => qw(BR_DEFCONFIG);
 use constant BR_LINUX_OVERRIDE => qw(BR_LINUX_OVERRIDE);
 use constant BR_MIRROR => qw(BR_MIRROR);
 
@@ -39,6 +40,7 @@ use constant LOCAL_MK => qw(local.mk);
 use constant BR_FRAG_FILE => qw(br_fragments.cfg);
 use constant KERNEL_FRAG_FILE => qw(k_fragments.cfg);
 
+use constant BR_DEFAULT_DEFCONFIG => qw(brcmstb);
 use constant BR_MIRROR_PROTOCOL => qw(https://);
 use constant BR_MIRROR_HOST => qw(stbgit.stb.broadcom.net);
 use constant BR_MIRROR_PATH => qw(/mirror/buildroot);
@@ -1402,6 +1404,29 @@ sub get_br_mirror($)
 	return $br_mirror;
 }
 
+sub get_br_defconfig($)
+{
+	my ($opts_e) = @_;
+	my $br_defconfig;
+
+	# Set custom defconfig
+	if (defined($ENV{BR_DEFCONFIG})) {
+		$br_defconfig = $ENV{BR_DEFCONFIG};
+	}
+
+	# Command line option -e supersedes environment
+	if (defined($opts_e)) {
+		# Option "-e -" reverts to the default.
+		$br_defconfig = $opts_e;
+	}
+
+	if (!defined($br_defconfig) || $br_defconfig eq '-') {
+		$br_defconfig = BR_DEFAULT_DEFCONFIG;
+	}
+
+	return $br_defconfig;
+}
+
 sub run_clean_mode($$)
 {
 	my ($prg, $br_outputdir) = @_;
@@ -1497,6 +1522,7 @@ sub print_usage($)
 		"          -c...........clean (remove output/\$platform)\n".
 		"          -D...........use platform's default kernel config\n".
 		"          -d <fname>...use <fname> as kernel defconfig\n".
+		"          -e <fname>...use <fname> as BR defconfig\n".
 		"          -F <fname>...use <fname> as kernel fragment file\n".
 		"          -f <fname>...use <fname> as BR fragment file\n".
 		"          -H...........obtain Linux GIT SHA only\n".
@@ -1517,6 +1543,7 @@ sub print_usage($)
 		"          -X <path>....use <path> as CCACHE ('-' for none)\n");
 	print(STDERR "\nEnvironment Variables:\n".
 		"          BR_CCACHE............CCACHE directory (like -X)\n".
+		"          BR_DEFCONFIG.........BR defconfig (like -e)\n".
 		"          BR_LINUX_OVERRIDE....Linux directory (like -L)\n".
 		"          BR_MIRROR............BR mirror (like -M)\n");
 }
@@ -1528,7 +1555,6 @@ my $prg = basename($0);
 
 my @orig_cmdline = @ARGV;
 my @linux_ver;
-my $merged_config = 'brcmstb_merged_defconfig';
 my $br_output_default = 'output';
 my $temp_config = 'temp_config';
 my $clean_mode = 0;
@@ -1539,6 +1565,8 @@ my $is_64bit = 0;
 my $disable_ams_tracing = 0;
 my $disable_cma_driver = 0;
 my $relative_outputdir;
+my $merged_config;
+my $br_defconfig;
 my $br_outputdir;
 my $br_mirror;
 my $br_ccache;
@@ -1553,7 +1581,7 @@ my $arch;
 my $opt_keys;
 my %opts;
 
-getopts('3:bCcDd:F:f:Hhij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
+getopts('3:bCcDd:e:F:f:Hhij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
 $opt_keys = join('', keys(%opts));
 $arch = $ARGV[0];
 
@@ -1740,6 +1768,19 @@ if (check_open_source_dir() && !defined($opts{'n'})) {
 }
 if (!defined($generic_config{'BR2_DL_DIR'})) {
 	check_oss_stale_sources('dl', $br_outputdir);
+}
+
+$br_defconfig = get_br_defconfig($opts{'e'});
+$merged_config = "${br_defconfig}_merged_defconfig";
+print("Using ${br_defconfig}_defconfig...\n");
+# Don't use brcmstb_defconfig by default for the kernel if we aren't using it
+# for Buildroot.
+if ($br_defconfig !~ /^brcmstb/) {
+	# If the user didn't specify a kernel defconfig, use the arch default.
+	if (!defined($opts{'D'}) && !defined($opts{'d'})) {
+		print("Switching to default kernel defconfig for $arch...\n");
+		$opts{'D'} = 1;
+	}
 }
 
 if (defined($opts{'d'})) {
@@ -1979,7 +2020,7 @@ write_config(\%generic_config, $temp_config, 1);
 write_config($arch_config{$arch}, $temp_config, 0);
 write_config($toolchain_config{$arch}, $temp_config, 0);
 
-system("support/kconfig/merge_config.sh -m configs/brcmstb_defconfig ".
+system("support/kconfig/merge_config.sh -m configs/${br_defconfig}_defconfig ".
 	"\"$temp_config\"");
 if (defined($opts{'f'})) {
 	my $fragment_file = merge_br_fragments($prg, $br_outputdir, $opts{'f'});
