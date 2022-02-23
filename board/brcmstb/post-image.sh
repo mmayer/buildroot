@@ -16,9 +16,9 @@ if [ $# -lt 2 ]; then
 fi
 
 if which pbzip2 >/dev/null 2>&1; then
-	BZIP2=${BZIP2:-pbzip2}
+	BRCM_COMPRESS=${BRCM_COMPRESS:-pbzip2}
 else
-	BZIP2=${BZIP2:-bzip2}
+	BRCM_COMPRESS=${BRCM_COMPRESS:-bzip2}
 fi
 
 image_path="$1"
@@ -85,7 +85,7 @@ echo "Creating NFS tar-ball..."
 # We need fakeroot, so mknod doesn't complain.
 fakeroot tar -C "$image_path/romfs" -x -f "$rootfs_tar"
 tar -C "$image_path" -c -f "$image_path/$nfs_tar.bz2" \
-	-I $BZIP2 --owner 0 --group 0 romfs
+	-I $BRCM_COMPRESS --owner 0 --group 0 romfs
 rm -rf "$image_path/romfs"
 rm -f "${rootfs_tar}"
 
