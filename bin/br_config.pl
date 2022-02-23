@@ -33,6 +33,7 @@ use constant BR_CCACHE => qw(BR_CCACHE);
 use constant BR_DEFCONFIG => qw(BR_DEFCONFIG);
 use constant BR_LINUX_OVERRIDE => qw(BR_LINUX_OVERRIDE);
 use constant BR_MIRROR => qw(BR_MIRROR);
+use constant BR_OVERLAY => qw(BR_OVERLAY);
 
 # Config files
 use constant AUTO_MK => qw(brcmstb.mk);
@@ -1427,6 +1428,30 @@ sub get_br_defconfig($)
 	return $br_defconfig;
 }
 
+sub get_br_overlay($$)
+{
+	my ($opts_O, $defconfig) = @_;
+	my $br_overlay;
+
+	# Set custom overlay
+	if (defined($ENV{BR_OVERLAY})) {
+		$br_overlay = $ENV{BR_OVERLAY};
+	}
+
+	# Command line option -O supersedes environment
+	if (defined($opts_O)) {
+		# Option "-O -" uses the default. This overrides the environment
+		# variable BR_OVERLAY.
+		$br_overlay = $opts_O;
+	}
+
+	if (!defined($br_overlay) || $br_overlay eq '-') {
+		$br_overlay = sprintf(OVERLAY_DIR, $defconfig);
+	}
+
+	return $br_overlay;
+}
+
 sub run_clean_mode($$)
 {
 	my ($prg, $br_outputdir) = @_;
@@ -1533,6 +1558,7 @@ sub print_usage($)
 		"          -l <url>.....use <url> as the Linux kernel repo\n".
 		"          -M <url>.....use <url> as BR mirror ('-' for none)\n".
 		"          -n...........do not use shared download cache\n".
+		"          -O <path>....use <path> overlay directory\n".
 		"          -o <path>....use <path> as the BR output directory\n".
 		"          -R <str>.....use <str> as kernel fragment(s)\n".
 		"          -r <str>.....use <str> as BR fragments\n".
@@ -1545,7 +1571,8 @@ sub print_usage($)
 		"          BR_CCACHE............CCACHE directory (like -X)\n".
 		"          BR_DEFCONFIG.........BR defconfig (like -e)\n".
 		"          BR_LINUX_OVERRIDE....Linux directory (like -L)\n".
-		"          BR_MIRROR............BR mirror (like -M)\n");
+		"          BR_MIRROR............BR mirror (like -M)\n".
+		"          BR_OVERLAY...........rootfs overlay (like -O)\n");
 }
 
 ########################################
@@ -1582,7 +1609,7 @@ my $arch;
 my $opt_keys;
 my %opts;
 
-getopts('3:bCcDd:e:F:f:Hhij:L:l:M:no:R:r:ST:t:v:X:', \%opts);
+getopts('3:bCcDd:e:F:f:Hhij:L:l:M:nO:o:R:r:ST:t:v:X:', \%opts);
 $opt_keys = join('', keys(%opts));
 $arch = $ARGV[0];
 
@@ -2010,7 +2037,7 @@ if (defined($br_mirror)) {
 	print("Not using a Buildroot mirror...\n");
 }
 
-$overlay_dir = sprintf(OVERLAY_DIR, $br_defconfig);
+$overlay_dir = get_br_overlay($opts{'O'}, $br_defconfig);
 print("Looking for overlay directory $overlay_dir...\n");
 if (-d $overlay_dir) {
 	print("Found overlay directory $overlay_dir...\n");
