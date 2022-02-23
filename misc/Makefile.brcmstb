@@ -1,8 +1,8 @@
 # Check if we have parallel bzip2 and use it if possible.
 ifeq ($(shell which pbzip2),)
-BZIP2			?= bzip2
+BRCM_COMPRESS		?= bzip2
 else
-BZIP2			?= pbzip2
+BRCM_COMPRESS		?= pbzip2
 endif
 
 BRCMSTB_OUTPUT_DIR	?= output
@@ -79,9 +79,9 @@ brcmstb-diffs: brcmstb-tarball
 		base_sha=`echo "$$git_log" | cut -d' ' -f1`; \
 		rel=`echo "$$git_log" | cut -d' ' -f4-`; \
 		echo "Base SHA is $$base_sha, release is $$rel"; \
-		git diff --diff-filter=M $${base_sha}..HEAD | $(BZIP2) \
+		git diff --diff-filter=M $${base_sha}..HEAD | $(BRCM_COMPRESS) \
 			>$$dest/buildroot-delta-$$rel-brcm-changed.patch.bz2; \
-		git diff --diff-filter=A $${base_sha}..HEAD | $(BZIP2) \
+		git diff --diff-filter=A $${base_sha}..HEAD | $(BRCM_COMPRESS) \
 			>$$dest/buildroot-delta-$$rel-brcm-new.patch.bz2; \
 	)
 
@@ -92,11 +92,11 @@ linux-release:
 		echo "Using git archive to generate kernel tar-ball..."; \
 		git --git-dir=$(BRCMSTB_LINUX_DIR)/.git \
 			archive --prefix=linux/ --format=tar HEAD | \
-			$(BZIP2) >$(SRC_TARBALL); \
+			$(BRCM_COMPRESS) >$(SRC_TARBALL); \
 	else \
 		echo "Using tar to generate kernel tar-ball..."; \
 		tar -C .. -c -f $(SRC_TARBALL) \
-			-I $(BZIP2) --exclude linux/.git \
+			-I $(BRCM_COMPRESS) --exclude linux/.git \
 			linux; \
 	fi
 
@@ -149,7 +149,7 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 		--exclude 'git' \
 		--exclude 'git.readme' \
 		buildroot/dl
-	$(BZIP2) $(SRC_DST)/buildroot-$(DOTVERSION).tar
+	$(BRCM_COMPRESS) $(SRC_DST)/buildroot-$(DOTVERSION).tar
 	ln -s buildroot-$(DOTVERSION).tar.bz2 \
 		$(SRC_DST)/rootfs-$(DOTVERSION).tar.bz2
 	# Use stbtools script to generate the stbtools tar-ball, if it exists.
