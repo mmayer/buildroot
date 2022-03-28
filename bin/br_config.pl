@@ -638,7 +638,15 @@ sub get_gcc_dir($)
 	my $llvm_wrapper = "$toolchain/bin/".LLVM_WRAPPER;
 
 	if (-x $llvm_wrapper) {
+		my $ret;
+		# Calling "llvm_wrapper.pl --get-gcc" will fail if the LLVM
+		# toolchain doesn't rely on GCC for the target runtime. We
+		# handle this by returning 'undef'.
 		chomp($toolchain = `$llvm_wrapper --get-gcc`);
+		$ret = ($? >> 8);
+		if ($ret != 0) {
+			return undef;
+		}
 	}
 
 	return $toolchain;
@@ -802,16 +810,23 @@ sub set_target_toolchain($$$)
 		my ($major, $minor, $patch) = ($1, $2, $3);
 		my $llvm_ver_str = "BR2_TOOLCHAIN_EXTERNAL_LLVM_$major";
 
-		$stbgcc = "$gcc_dir/bin/".$compiler_map{$arch};
-		$gcc_version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
-		if ($gcc_version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
-			($gcc_major, $gcc_minor, $gcc_patch) = ($1, $2, $3);
+		if (defined($gcc_dir)) {
+			$stbgcc = "$gcc_dir/bin/".$compiler_map{$arch};
+			$gcc_version = `$stbgcc -v 2>&1 | grep 'gcc version'`;
+			if ($gcc_version =~ /\s+(\d+)\.(\d+)\.(\d+)/) {
+				($gcc_major, $gcc_minor, $gcc_patch) =
+					($1, $2, $3);
+			} else {
+				return -3;
+			}
 		} else {
-			return -3;
+			print("This LLVM toolchain doesn't rely on GCC...\n");
 		}
 
 		print("Detected LLVM $major.$minor...\n");
-		print("Detected GCC $gcc_major.$gcc_minor...\n");
+		if (defined($gcc_dir)) {
+			print("Detected GCC $gcc_major.$gcc_minor...\n")
+		}
 		print("C library is $libc...\n");
 		if (!kernel_at_least($kernel_version, LLVM_MIN_KERNEL)) {
 			print("WARNING! LLVM is only supported as of kernel ".
@@ -827,7 +842,7 @@ sub set_target_toolchain($$$)
 			$generic_config{$pkg} = '';
 		}
 	} else {
-		print("WARNING! Couldn't determine GCC version number. ".
+		print("WARNING! Couldn't determine compiler version. ".
 			"Build may fail.\n");
 		print("Toolchain: $toolchain\n");
 	}
@@ -960,8 +975,11 @@ sub get_sysroot($$)
 {
 	my ($toolchain, $arch) = @_;
 	my ($compiler_arch, $sys_root);
+	my $gcc_dir = get_gcc_dir($toolchain);
 
-	$toolchain = get_gcc_dir($toolchain);
+	if (defined($gcc_dir)) {
+		$toolchain = $gcc_dir;
+	}
 	$compiler_arch = $arch_config{$arch}->{'arch_name'};
 	# The MIPS compiler may be called "mipsel-*" not just "mips-*".
 	if (defined($arch_config{$arch}->{'BR2_mipsel'})) {
@@ -1605,6 +1623,7 @@ my $toolchain;
 my $toolchain_ver;
 my $recommended_toolchain;
 my $kernel_header_version;
+my $gcc_dir;
 my $arch;
 my $opt_keys;
 my %opts;
@@ -1988,9 +2007,12 @@ if (defined($opts{'t'})) {
 	$toolchain =~ s|/+$||;
 }
 
-# Only check the GCC portion of the toolchain at this time. We may want an LLVM
-# check later on.
-$recommended_toolchain = check_toolchain(get_gcc_dir($toolchain), $local_linux);
+$gcc_dir = get_gcc_dir($toolchain);
+if (defined($gcc_dir)) {
+	$recommended_toolchain = check_toolchain($gcc_dir, $local_linux);
+} else {
+	$recommended_toolchain = check_toolchain($toolchain, $local_linux);
+}
 if ($recommended_toolchain ne '') {
 	my $t = $toolchain;
 
