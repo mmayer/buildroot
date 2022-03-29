@@ -2015,12 +2015,20 @@ if (defined($gcc_dir)) {
 }
 if ($recommended_toolchain ne '') {
 	my $t = $toolchain;
+	# Toolchain sleep time
+	my $sleep_time = $ENV{'BR_TC_SLEEP_TIME'};
 
 	$t =~ s|.*/||;
+	# If unset or non-numeric, use the default sleep time.
+	if (!defined($sleep_time) || $sleep_time =~ /[^\d]/) {
+		$sleep_time = SLEEP_TIME;
+	}
 	print(STDERR "WARNING: you are using toolchain $t. Recommended is ".
 		"$recommended_toolchain.\n");
-	print(STDERR "Hit Ctrl-C now or wait ".SLEEP_TIME." seconds...\n");
-	sleep(SLEEP_TIME);
+	if ($sleep_time > 0) {
+		print(STDERR "Hit Ctrl-C now or wait $sleep_time seconds...\n");
+		sleep($sleep_time);
+	}
 }
 $ret = set_target_toolchain($toolchain, $arch, $local_linux);
 if ($ret == 0) {
