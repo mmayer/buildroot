@@ -645,10 +645,15 @@ STRIP_FIND_CMD = \
 	-not \( $(call findfileclauses,libpthread*.so* ld-*.so* *.ko) \) \
 	-print0
 
+# Strip ld-*.so*, but only if it isn't musl (because ld-musl -> libc).
+ifeq ($(BR2_TOOLCHAIN_USES_MUSL),)
+STRIP_LD_SO_SPECIAL_ARG = -name 'ld-*.so*' -o
+endif
+
 # Special stripping (only debugging symbols) for libpthread and ld-*.so.
 STRIP_FIND_SPECIAL_LIBS_CMD = \
 	$(STRIP_FIND_COMMON_CMD) \
-	\( -name 'ld-*.so*' -o -name 'libpthread*.so*' \) \
+	\( $(STRIP_LD_SO_SPECIAL_ARG) -name 'libpthread*.so*' \) \
 	-print0
 
 ifeq ($(BR2_ECLIPSE_REGISTER),y)
