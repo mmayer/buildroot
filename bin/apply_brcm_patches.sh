@@ -54,6 +54,12 @@ brcm_patches="${patch_prefix}${SOFTWARE_VERSION}"
 if [ ! -d "${brcm_patches}" ]; then
 	maj_ver=`echo "${SOFTWARE_VERSION}" | cut -d. -f1-2`
 	patch_ver=`echo "${SOFTWARE_VERSION}" | cut -d. -f3`
+	if [ "${patch_ver}" = "" ]; then
+		# Hack, so that software packages that don't have 3-part version
+		# numbers also work (e.g. util-linux-2.38 -> patch dir v2.38.0).
+		patch_ver=0
+		test -d "${brcm_patches}.0" && brcm_patches="${brcm_patches}.0"
+	fi
 	while [ ${patch_ver} -gt 0 ]; do
 		patch_ver=`expr ${patch_ver} - 1`
 		prev_ver=${maj_ver}.${patch_ver}
