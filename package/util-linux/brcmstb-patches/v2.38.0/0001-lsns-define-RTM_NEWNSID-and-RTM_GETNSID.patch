@@ -1,0 +1,37 @@
+From 8e9e544bca67db22d80700b37dcb530bcf3d3500 Mon Sep 17 00:00:00 2001
+From: Markus Mayer <mmayer@broadcom.com>
+Date: Tue, 5 Apr 2022 10:01:30 -0700
+Subject: [PATCH] lsns: define RTM_NEWNSID and RTM_GETNSID
+
+Define RTM_NEWNSID and RTM_GETNSID if the kernel headers don't. This
+allows lsns to be built under kernels < 4.0.
+
+This patch is based on util-linux 2.38.
+
+Signed-off-by: Markus Mayer <mmayer@broadcom.com>
+---
+ sys-utils/lsns.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/sys-utils/lsns.c b/sys-utils/lsns.c
+index 1a7e9f333482..0978989f7b1a 100644
+--- a/sys-utils/lsns.c
++++ b/sys-utils/lsns.c
+@@ -43,6 +43,14 @@
+ # define USE_NS_GET_API	1
+ #endif
+ 
++#ifndef RTM_NEWNSID
++#define RTM_NEWNSID	88
++#endif
++
++#ifndef RTM_GETNSID
++#define RTM_GETNSID	90
++#endif
++
+ #include "pathnames.h"
+ #include "nls.h"
+ #include "xalloc.h"
+-- 
+2.25.1
+
