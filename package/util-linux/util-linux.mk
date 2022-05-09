@@ -35,6 +35,14 @@ UTIL_LINUX_CONF_OPTS += \
 
 UTIL_LINUX_LINK_LIBS = $(TARGET_NLS_LIBS)
 
+define UTIL_LINUX_BRCMSTB_PATCHES
+	$(Q)PKGDIR=$(PKGDIR) \
+		SOFTWARE_VERSION=$(UTIL_LINUX_VERSION) \
+		SRCDIR=$(@D) \
+		bin/apply_brcm_patches.sh
+endef
+UTIL_LINUX_PRE_PATCH_HOOKS += UTIL_LINUX_BRCMSTB_PATCHES
+
 HOST_UTIL_LINUX_DEPENDENCIES = host-pkgconf
 
 # We also don't want the host-python dependency
