@@ -69,39 +69,13 @@ BUSYBOX_DEPENDENCIES = \
 	$(if $(BR2_PACKAGE_WGET),wget) \
 	$(if $(BR2_PACKAGE_WHOIS),whois)
 
-# BRCMSTB_PATCHES will look for a patch directory that matches the full version
-# number first. If it can't find such a directory, it will decrement the patch
-# level version number (the 3rd number in the version string) and look for patch
-# directories for preceeding sub-versions of busybox. The assumption is that
-# older patches will likely still apply between sub-versions.
-# If we find that patches exist for previous releases of Busybox, but there are
-# none that suit the current release, we abort the build with an error. We have
-# to assume that the patches haven't been ported yet (but need to be), and we
-# need to alert the user to that fact.
-define BRCMSTB_PATCHES
-	$(Q)bbox_prefix="$(PKGDIR)brcmstb-patches/v"; \
-	bbox_brcm_patches="$${bbox_prefix}$(BUSYBOX_VERSION)"; \
-	if [ ! -d "$${bbox_brcm_patches}" ]; then \
-		maj_ver=`echo "$(BUSYBOX_VERSION)" | cut -d. -f1-2`; \
-		patch_ver=`echo "$(BUSYBOX_VERSION)" | cut -d. -f3`; \
-		while [ $${patch_ver} -gt 0 ]; do \
-			patch_ver=`expr $${patch_ver} - 1`; \
-			prev_ver=$${maj_ver}.$${patch_ver}; \
-			bbox_brcm_patches="$${bbox_prefix}$${prev_ver}"; \
-			if [ -d "$${bbox_brcm_patches}" ]; then \
-				break; \
-			fi; \
-		done; \
-	fi; \
-	if [ -d "$${bbox_brcm_patches}" ]; then \
-		echo "Found patch dir $${bbox_brcm_patches}."; \
-		$(APPLY_PATCHES) $(@D) "$${bbox_brcm_patches}" \*; \
-	elif [ -d $(PKGDIR)brcmstb-patches ]; then \
-		echo "ERROR: couldn't find STB patches for this release!" 1>&2; \
-		exit 1; \
-	fi
+define BUSYBOX_BRCMSTB_PATCHES
+	$(Q)PKGDIR=$(PKGDIR) \
+		SOFTWARE_VERSION=$(BUSYBOX_VERSION) \
+		SRCDIR=$(@D) \
+		bin/apply_brcm_patches.sh
 endef
-BUSYBOX_PRE_PATCH_HOOKS += BRCMSTB_PATCHES
+BUSYBOX_PRE_PATCH_HOOKS += BUSYBOX_BRCMSTB_PATCHES
 
 # Link against libtirpc if available so that we can leverage its RPC
 # support for NFS mounting with BusyBox
