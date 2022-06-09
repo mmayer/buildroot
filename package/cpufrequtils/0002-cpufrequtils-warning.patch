@@ -1,0 +1,99 @@
+diff -ru cpufrequtils-008.orig/lib/cpufreq.c cpufrequtils-008/lib/cpufreq.c
+--- cpufrequtils-008.orig/lib/cpufreq.c	2012-05-05 16:17:18.000000000 -0700
++++ cpufrequtils-008/lib/cpufreq.c	2022-06-09 12:29:38.416722957 -0700
+@@ -253,3 +253,47 @@
+ 
+ 	return (ret);
+ }
++
++static void print_separator(int len)
++{
++	int i;
++
++	fprintf(stderr, "+");
++	for (i = 1; i < len - 1; i++) {
++		fprintf(stderr, "-");
++	}
++	fprintf(stderr, "+\n");
++}
++
++static void print_line(const char *s, int maxlen)
++{
++	int i;
++	int len = strlen(s);
++
++	fprintf(stderr, "| %s", s);
++	for (i = len; i < maxlen - 3; i++) {
++		fprintf(stderr, " ");
++	}
++	fprintf(stderr, "|\n");
++}
++
++void print_cpufrequtils_warning(void)
++{
++	const static int maxlen = 80;
++
++	print_separator(maxlen);
++	print_line("!!!WARNING!!! !!!WARNING!!! !!!WARNING!!! !!!WARNING!!! "
++		"!!! WARNING!!!", maxlen);
++	print_separator(maxlen);
++
++	print_line("This tool is obsolete and has been depricated. It may not "
++			"work properly on", maxlen);
++	print_line("recent hardware. Please use \"cpupower\" instead. Possible "
++			"commands include:", maxlen);
++	print_line("    cpupower frequency-info [...]", maxlen);
++	print_line("    cpupower frequency-set ...", maxlen);
++	print_line("among others.", maxlen);
++	print_line("cpufrequtils will be removed from the rootfs in an "
++		"upcoming release.", maxlen);
++	print_separator(maxlen);
++}
+diff -ru cpufrequtils-008.orig/lib/cpufreq.h cpufrequtils-008/lib/cpufreq.h
+--- cpufrequtils-008.orig/lib/cpufreq.h	2012-05-05 16:17:18.000000000 -0700
++++ cpufrequtils-008/lib/cpufreq.h	2022-06-07 15:01:56.231551025 -0700
+@@ -208,6 +208,8 @@
+ 
+ extern int cpufreq_set_frequency(unsigned int cpu, unsigned long target_frequency);
+ 
++extern void print_cpufrequtils_warning(void);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -ru cpufrequtils-008.orig/utils/aperf.c cpufrequtils-008/utils/aperf.c
+--- cpufrequtils-008.orig/utils/aperf.c	2022-04-12 14:23:46.607870768 -0700
++++ cpufrequtils-008/utils/aperf.c	2022-06-07 12:55:06.238455252 -0700
+@@ -383,6 +383,8 @@
+ 	int sleep_time = 1, once = 0;
+ 	const char *msr_path = "/dev/cpu/0/msr";
+ 
++	print_cpufrequtils_warning();
++
+ 	while ( (c = getopt_long(argc,argv,"c:ohi:",long_options,
+ 				 NULL)) != -1 ) {
+ 		switch ( c ) {
+diff -ru cpufrequtils-008.orig/utils/info.c cpufrequtils-008/utils/info.c
+--- cpufrequtils-008.orig/utils/info.c	2022-04-12 14:23:46.647871119 -0700
++++ cpufrequtils-008/utils/info.c	2022-06-07 12:55:06.418456771 -0700
+@@ -508,6 +508,8 @@
+ 	setlocale(LC_ALL, "");
+ 	textdomain (PACKAGE);
+ 
++	print_cpufrequtils_warning();
++
+ 	do {
+ 		ret = getopt_long(argc, argv, "c:hoefwldpgrasmy", info_opts, NULL);
+ 		switch (ret) {
+diff -ru cpufrequtils-008.orig/utils/set.c cpufrequtils-008/utils/set.c
+--- cpufrequtils-008.orig/utils/set.c	2022-04-12 14:23:46.647871119 -0700
++++ cpufrequtils-008/utils/set.c	2022-06-07 12:55:06.558457956 -0700
+@@ -259,6 +259,8 @@
+ 	setlocale(LC_ALL, "");
+ 	textdomain (PACKAGE);
+ 
++	print_cpufrequtils_warning();
++
+ 	/* parameter parsing */
+ 	do {
+ 		ret = getopt_long(argc, argv, "c:d:u:g:f:hr", set_opts, NULL);
