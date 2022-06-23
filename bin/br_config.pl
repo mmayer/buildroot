@@ -642,7 +642,7 @@ sub get_gcc_dir($)
 		# Calling "llvm_wrapper.pl --get-gcc" will fail if the LLVM
 		# toolchain doesn't rely on GCC for the target runtime. We
 		# handle this by returning 'undef'.
-		chomp($toolchain = `$llvm_wrapper --get-gcc`);
+		chomp($toolchain = `$llvm_wrapper --get-gcc 2>/dev/null`);
 		$ret = ($? >> 8);
 		if ($ret != 0) {
 			return undef;
