@@ -72,6 +72,17 @@ LINUX_MAKE_ENV = \
 	$(HOST_MAKE_ENV) \
 	BR_BINARIES_DIR=$(BINARIES_DIR)
 
+ifeq ($(BR2_TOOLCHAIN_LLVM),y)
+LINUX_MAKE_ENV += LLVM=1
+# The stbllvm-10 toolchain is using gas anyway, and setting LLVM_IAS will
+# break the build. However, we do need LLVM_IAS for newer toolchains,
+# because Linux 5.4 won't build with llvm-as.
+ifeq ($(BR2_TOOLCHAIN_LLVM_AT_LEAST_11),y)
+LINUX_MAKE_ENV += LLVM_IAS=1
+endif
+LINUX_MAKE_ENV += PATH=$(call qstrip,$(BR2_TOOLCHAIN_EXTERNAL_PATH))/bin:$(PATH)
+endif
+
 LINUX_INSTALL_IMAGES = YES
 LINUX_DEPENDENCIES = host-kmod
 
