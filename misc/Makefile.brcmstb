@@ -152,14 +152,23 @@ brcmstb-release: brcmstb-diffs linux-diffs linux-release
 	$(BRCM_COMPRESS) $(SRC_DST)/buildroot-$(DOTVERSION).tar
 	ln -s buildroot-$(DOTVERSION).tar.bz2 \
 		$(SRC_DST)/rootfs-$(DOTVERSION).tar.bz2
-	# Use stbtools script to generate the stbtools tar-ball, if it exists.
-	# Fall back to the tar-ball Buildroot generated, if it doesn't.
-	if [ -x $(STBTOOLS_GEN_TAR) ]; then \
-		$(STBTOOLS_GEN_TAR) $(STBTOOLS_VERSION) $(SRC_DST); \
-	else \
+	# Use the downloaded stbtools tar-ball if it exists, generate a new one
+	# if necessary, and bail if neither of these two options works.
+	if [ -e $(STBTOOLS_SRC_PATH)/stbtools-$(STBTOOLS_VERSION).tar.gz ]; then \
 		echo "Copying stbtools-$(STBTOOLS_VERSION).tar.gz..."; \
 		cp -p $(STBTOOLS_SRC_PATH)/stbtools-$(STBTOOLS_VERSION).tar.gz \
 			$(SRC_DST); \
+	elif [ -x $(STBTOOLS_GEN_TAR) ]; then \
+		echo "Generating stbtools-$(STBTOOLS_VERSION).tar.gz..."; \
+		(cd $(STBTOOLS_SRC_PATH)/git; git checkout master; git pull); \
+		$(STBTOOLS_GEN_TAR) $(STBTOOLS_VERSION) $(SRC_DST); \
+		if [ $$? != 0 ]; then \
+			echo "Error generating tar-ball." 1>&2; \
+			exit 1; \
+		fi; \
+	else \
+		echo "Can't bundle stbtools-$(STBTOOLS_VERSION).tar.gz." 1>&2; \
+		exit 1; \
 	fi
 
 brcmstb-%:
