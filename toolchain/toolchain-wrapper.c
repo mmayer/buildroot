@@ -62,13 +62,9 @@ static char *predef_args[] = {
 	ccache_path,
 #endif
 	path,
-/* Skip passing --sysroot and -mabi if we are using LLVM */
-#ifdef BR_LLVM
-#if defined(BR2_RELRO_PARTIAL) || defined(BR2_RELRO_FULL)
-	"-Wno-unused-command-line-argument",
-#endif
-#else /* !BR_LLVM */
 	"--sysroot", sysroot,
+/* LLVM doesn't support -mabi */
+#ifndef BR_LLVM
 #ifdef BR_ABI
 	"-mabi=" BR_ABI,
 #endif
@@ -105,6 +101,15 @@ static char *predef_args[] = {
 #endif
 #if defined(BR_MIPS_TARGET_BIG_ENDIAN) || defined(BR_ARC_TARGET_BIG_ENDIAN)
 	"-EB",
+#endif
+/*
+ * LLVM will warn about "unused linker arguments" when linker arguments are
+ * passed but only the compiler is invoked. Combined with -Werror, this will
+ * lead to the build aborting. Let's prevent RELRO arguments from causing such
+ * problems.
+ */
+#if defined(BR_LLVM) && (defined(BR2_RELRO_PARTIAL) || defined(BR2_RELRO_FULL))
+	"-Wno-unused-command-line-argument",
 #endif
 #ifdef BR_ADDITIONAL_CFLAGS
 	BR_ADDITIONAL_CFLAGS
