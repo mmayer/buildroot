@@ -87,6 +87,11 @@ while read f; do
 		continue
 	fi
 
+	# Architecture is BPF
+	if test "${arch}" = "Linux BPF" ; then
+		continue
+	fi
+
 	# Didn't find a straight match. See if we are on a 64-bit architecture
 	# and our binary is a 32-bit binary of the same architecture.
 	if [[ "${arch_name}" =~ 64$ ]]; then
