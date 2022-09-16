@@ -137,6 +137,11 @@ ifeq ($(BR2_TOOLCHAIN_EXTERNAL_MUSL),y)
 TOOLCHAIN_EXTERNAL_LIBS += libc.so
 endif
 
+ifeq ($(BR2_TOOLCHAIN_EXTERNAL_LLVM),y)
+TOOLCHAIN_EXTERNAL_LIBS += libc++*.so*
+TOOLCHAIN_EXTERNAL_LIBS += libunwind.so*
+endif
+
 ifeq ($(BR2_INSTALL_LIBSTDCPP),y)
 TOOLCHAIN_EXTERNAL_LIBS += libstdc++.so.*
 endif
