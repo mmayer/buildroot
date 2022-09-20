@@ -1,0 +1,21 @@
+#!/bin/sh
+prg=`basename $0`
+
+# No arguments given. Let libc.so complain.
+if [ $# = 0 ]; then
+	exec /usr/lib/libc.so --list
+fi
+
+# Loop over all arguments.
+for f in "$@"; do
+	res=`od -An -t x1 -j 4 -N 1 "$f" | awk '{ print $1 }'`
+	if [ "$res" = "02" ]; then
+		# 64-bit
+		/usr/lib/libc.so --list "$f"
+	elif [ "$res" = "01" ]; then
+		# 32-bit
+		/usr/lib32/libc.so --list "$f"
+	else
+		echo "$prg: unknown binary format -- $f" 1>&2
+	fi
+done
