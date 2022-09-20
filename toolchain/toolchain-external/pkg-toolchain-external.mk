@@ -409,6 +409,14 @@ define TOOLCHAIN_EXTERNAL_INSTALL_TARGET_LIBS
 	$(Q)for libpattern in $(TOOLCHAIN_EXTERNAL_LIBS); do \
 		$(call copy_toolchain_lib_root,$$libpattern); \
 	done
+	# We use "ls" to check if there are 32-bit files to copy. Otherwise the
+	# build would abort with an error if there are no files.
+	$(Q)for d in $(BR2_ROOTFS_LIB32_DIR) usr/$(BR2_ROOTFS_LIB32_DIR); do \
+		if ls $${STAGING_DIR}/$${d}/*.so* >/dev/null 2>&1; then \
+			echo "$${STAGING_DIR}/$${d} -> $(TARGET_DIR)/$${d}"; \
+			cp -a $${STAGING_DIR}/$${d}/*.so* $(TARGET_DIR)/$${d}; \
+		fi; \
+	done
 endef
 endif
 
@@ -463,12 +471,19 @@ define TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS
 			"$${STAGING_DIR}/usr/$${lib32_dir}"; \
 		rsync -a --exclude '*.a' "$(BR2_ROOTFS_RUNTIME32_PATH)/lib/" \
 			"$${STAGING_DIR}/$${lib32_dir}"; \
-		if [ "$${lib32_dir}" != "lib" ]; then \
+		if ! file "$(BR2_ROOTFS_RUNTIME32_PATH)/usr/lib/libc.so" 2>/dev/null | grep 'ASCII' >/dev/null; then \
+			echo "Copying 32-bit /usr/lib..."; \
+			rsync -a --exclude '*.[ao]' --exclude '*/' \
+				"$(BR2_ROOTFS_RUNTIME32_PATH)/usr/lib/" \
+				"$${STAGING_DIR}/usr/$${lib32_dir}"; \
+		elif [ "$${lib32_dir}" != "lib" ]; then \
 			ldso_32=`ls $${STAGING_DIR}/$${lib32_dir}/ld-linux*.so*`; \
 			ldso_32=`basename "$${ldso_32}"`; \
 			echo "Creating symlink for $${ldso_32}"; \
 			ln -snf "../$${lib32_dir}/$${ldso_32}" \
 				"$${STAGING_DIR}/lib/$${ldso_32}"; \
+		else \
+			echo "No need to copy 32-bit /usr/lib..."; \
 		fi; \
 	fi
 endef
