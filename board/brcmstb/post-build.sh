@@ -114,10 +114,22 @@ set +e
 musl_ldso=`ls ${TARGET_DIR}/lib/ld-musl-*.so* 2>/dev/null`
 set -e
 
-if [ "$musl_ldso" != "" ]; then
-	musl_ld_base=`basename "${musl_ldso}"`
-	echo "Creating ldd symlink for musl..."
-	ln -snf "../../lib/${musl_ld_base}" "${TARGET_DIR}/usr/bin/ldd"
+if [ "${musl_ldso}" != "" ]; then
+	if echo "${musl_ldso}" | grep ' ' >/dev/null; then
+		# If there's more than one ld.so, we are supporting 64-bit and
+		# 32-bit binaries. So, we need a helper script to implement the
+		# functionality of ldd.
+		echo "Copying ldd script for musl..."
+		# Just making extra sure any potentially existing ldd doesn't
+		# happen to be a symlink, so we don't overwrite random files.
+		rm -f "${TARGET_DIR}/usr/bin/ldd"
+		cp -p board/brcmstb/musl-ldd "${TARGET_DIR}/usr/bin/ldd"
+	else
+		# If there's only one ld.so, we can just symlink to it.
+		musl_ld_base=`basename "${musl_ldso}"`
+		echo "Creating ldd symlink for musl..."
+		ln -snf "../../lib/${musl_ld_base}" "${TARGET_DIR}/usr/bin/ldd"
+	fi
 else
 	echo "Copying ldd..."
 	cp -p ${HOST_DIR}/*gnu*/sysroot/usr/bin/ldd ${TARGET_DIR}/usr/bin
