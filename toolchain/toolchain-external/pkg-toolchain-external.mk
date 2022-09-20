@@ -476,6 +476,22 @@ define TOOLCHAIN_EXTERNAL_INSTALL_SYSROOT_LIBS
 			rsync -a --exclude '*.[ao]' --exclude '*/' \
 				"$(BR2_ROOTFS_RUNTIME32_PATH)/usr/lib/" \
 				"$${STAGING_DIR}/usr/$${lib32_dir}"; \
+			ldso_32=`ls $${STAGING_DIR}/$${lib32_dir}/ld-*.so*`; \
+			base_ldso_32=`basename "$${ldso_32}"`; \
+			echo "32-bit library loader is $${base_ldso_32}."; \
+			if [ -L "$${ldso_32}" ]; then \
+				ldso_dest=`readlink "$${ldso_32}"`; \
+				ldso_newdest=`echo "$${ldso_dest}" | sed -e "s,/lib/,/$${lib32_dir}/,"`; \
+				echo "$${base_ldso_32} is a symlink to $${ldso_dest}."; \
+				echo "Changing symlink to $${ldso_newdest}."; \
+				echo ln -snf "$${ldso_newdest}" "$${ldso_32}" ; \
+				ln -snf "$${ldso_newdest}" "$${ldso_32}" ; \
+				if [ $(BR2_ROOTFS_LIB_DIR) = "lib" ]; then \
+					ldso_lib64dir="$${STAGING_DIR}/lib/$${base_ldso_32}"; \
+					echo "Creating additional symlink in /lib"; \
+					ln -snf "$${ldso_newdest}" "$${ldso_lib64dir}" ; \
+				fi; \
+			fi; \
 		elif [ "$${lib32_dir}" != "lib" ]; then \
 			ldso_32=`ls $${STAGING_DIR}/$${lib32_dir}/ld-linux*.so*`; \
 			ldso_32=`basename "$${ldso_32}"`; \
