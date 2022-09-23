@@ -126,6 +126,21 @@ my %generic_config = (
 	'BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION' => 'stb-4.9',
 );
 
+sub is_release_build($)
+{
+	my ($opt_s) = @_;
+	my $rel_build = $ENV{'BR_RELEASE_BUILD'};
+
+	return 1 if (defined($opt_s));
+
+	# BR_RELEASE_BUILD=<0|off|false> should NOT turn on "release build"
+	if (defined($rel_build)) {
+		return ($rel_build =~ /^(0|off|false)$/i) ? 0 : 1;
+	}
+
+	return 0;
+}
+
 sub get_stb_version_from_str($)
 {
 	my ($s) = @_;
@@ -1590,7 +1605,8 @@ sub print_usage($)
 		"          BR_DEFCONFIG.........BR defconfig (like -e)\n".
 		"          BR_LINUX_OVERRIDE....Linux directory (like -L)\n".
 		"          BR_MIRROR............BR mirror (like -M)\n".
-		"          BR_OVERLAY...........rootfs overlay (like -O)\n");
+		"          BR_OVERLAY...........rootfs overlay (like -O)\n".
+		"          BR_RELEASE_BUILD.....release build (like -S)\n");
 }
 
 ########################################
@@ -1907,7 +1923,7 @@ if (defined($local_linux)) {
 	write_brcmstbmk($prg, $relative_outputdir, $local_linux);
 	write_localmk($prg, $relative_outputdir);
 	# Get the kernel GIT SHA locally if it's a GIT tree.
-	if (!defined($opts{'S'})) {
+	if (!is_release_build($opts{'S'})) {
 		my $kff = get_linux_sha_local($kernel_frag_files,
 				$relative_outputdir, $local_linux);
 		if (!defined($kff)) {
@@ -1936,7 +1952,7 @@ if (defined($local_linux)) {
 
 	# Determine the kernel GIT SHA remotely. The tree hasn't been cloned
 	# yet. We can't do anything if we can't resolve the remote host.
-	if ($linux_remote_resolves && !defined($opts{'S'})) {
+	if ($linux_remote_resolves && !is_release_build($opts{'S'})) {
 		$kernel_frag_files = get_linux_sha_remote($kernel_frag_files,
 			$relative_outputdir);
 	}
