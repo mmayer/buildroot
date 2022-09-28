@@ -2021,6 +2021,8 @@ if (defined($opts{'t'})) {
 	$toolchain = $opts{'t'};
 	# Remove trailing slashes if there are any.
 	$toolchain =~ s|/+$||;
+	# And remove /bin from the end of the path if it is there.
+	$toolchain =~ s|/bin$||;
 }
 
 $gcc_dir = get_gcc_dir($toolchain);
