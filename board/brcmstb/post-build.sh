@@ -111,11 +111,11 @@ fi
 
 # Set up ldd in the root file system
 set +e
-musl_ldso=`ls ${TARGET_DIR}/lib/ld-musl-*.so* 2>/dev/null`
+musl_ldso=`ls -1 ${TARGET_DIR}/lib/ld-musl-*.so* 2>/dev/null`
 set -e
 
 if [ "${musl_ldso}" != "" ]; then
-	if echo "${musl_ldso}" | grep ' ' >/dev/null; then
+	if [ `echo "${musl_ldso}" | wc -l` -gt 1 ]; then
 		# If there's more than one ld.so, we are supporting 64-bit and
 		# 32-bit binaries. So, we need a helper script to implement the
 		# functionality of ldd.
