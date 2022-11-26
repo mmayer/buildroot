@@ -17,6 +17,18 @@ LXC_CONF_OPTS = \
 	-Dexamples=false \
 	-Dman=false
 
+# Only apply patches to LXC >= 5
+LXC_MAJOR_VER := $(word 1,$(subst ., ,$(LXC_VERSION)))
+ifeq ($(shell test $(LXC_MAJOR_VER) -ge 5; echo $$?),0)
+define LXC_BRCMSTB_PATCHES
+	$(Q)PKGDIR=$(PKGDIR) \
+		SOFTWARE_VERSION=$(LXC_VERSION) \
+		SRCDIR=$(@D) \
+		bin/apply_brcm_patches.sh
+endef
+LXC_PRE_PATCH_HOOKS += LXC_BRCMSTB_PATCHES
+endif
+
 ifeq ($(BR2_PACKAGE_BASH_COMPLETION),y)
 LXC_DEPENDENCIES += bash-completion
 endif
