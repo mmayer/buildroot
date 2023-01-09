@@ -1,0 +1,67 @@
+From 47db6deeabd8dd4388357200a392d6145795a315 Mon Sep 17 00:00:00 2001
+From: Yu Watanabe <watanabe.yu+github@gmail.com>
+Date: Thu, 31 Mar 2022 03:23:33 +0900
+Subject: [PATCH 1/2] basic/missing: move BLKGETDISKSEQ to missing_fs.h
+
+As it is defined at linux/fs.h.
+
+(cherry picked from commit 2076612f843a2276207df34d2f6b6efbadfc4d21)
+---
+ src/basic/missing_fs.h   | 4 ++++
+ src/basic/missing_loop.h | 5 -----
+ src/shared/loop-util.c   | 1 +
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/basic/missing_fs.h b/src/basic/missing_fs.h
+index 7e390ba909b9..6638d7696221 100644
+--- a/src/basic/missing_fs.h
++++ b/src/basic/missing_fs.h
+@@ -6,6 +6,10 @@
+ #define RENAME_NOREPLACE (1 << 0)
+ #endif
+ 
++#ifndef BLKGETDISKSEQ
++#define BLKGETDISKSEQ _IOR(0x12,128,__u64)
++#endif
++
+ /* linux/fs.h or sys/mount.h */
+ #ifndef MS_MOVE
+ #define MS_MOVE 8192
+diff --git a/src/basic/missing_loop.h b/src/basic/missing_loop.h
+index 5fe63ad1ca68..449858d3a781 100644
+--- a/src/basic/missing_loop.h
++++ b/src/basic/missing_loop.h
+@@ -1,7 +1,6 @@
+ /* SPDX-License-Identifier: LGPL-2.1-or-later */
+ #pragma once
+ 
+-#include <linux/fs.h>
+ #include <linux/loop.h>
+ 
+ #ifndef LOOP_CONFIGURE
+@@ -15,10 +14,6 @@ struct loop_config {
+ #define LOOP_CONFIGURE 0x4C0A
+ #endif
+ 
+-#ifndef BLKGETDISKSEQ
+-#define BLKGETDISKSEQ _IOR(0x12,128,__u64)
+-#endif
+-
+ #ifndef LOOP_SET_STATUS_SETTABLE_FLAGS
+ #define LOOP_SET_STATUS_SETTABLE_FLAGS (LO_FLAGS_AUTOCLEAR | LO_FLAGS_PARTSCAN)
+ #endif
+diff --git a/src/shared/loop-util.c b/src/shared/loop-util.c
+index b55d4e44badc..8736c930ad88 100644
+--- a/src/shared/loop-util.c
++++ b/src/shared/loop-util.c
+@@ -23,6 +23,7 @@
+ #include "fd-util.h"
+ #include "fileio.h"
+ #include "loop-util.h"
++#include "missing_fs.h"
+ #include "missing_loop.h"
+ #include "parse-util.h"
+ #include "random-util.h"
+-- 
+2.34.1
+

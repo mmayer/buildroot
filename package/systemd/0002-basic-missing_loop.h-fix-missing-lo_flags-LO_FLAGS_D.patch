@@ -1,0 +1,31 @@
+From 548f77ad5d142faebc758e316603bbc07759c49c Mon Sep 17 00:00:00 2001
+From: "Guillaume W. Bres" <guillaume.bressaix@gmail.com>
+Date: Thu, 8 Sep 2022 15:54:57 +0200
+Subject: [PATCH 2/2] basic/missing_loop.h: fix missing lo_flags
+ LO_FLAGS_DIRECT_IO
+
+(cherry picked from commit b3fe33ff52ece458a5b990a4a68d59aef7cae10b)
+---
+ src/basic/missing_loop.h | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/basic/missing_loop.h b/src/basic/missing_loop.h
+index 449858d3a781..7141544b64f0 100644
+--- a/src/basic/missing_loop.h
++++ b/src/basic/missing_loop.h
+@@ -14,6 +14,11 @@ struct loop_config {
+ #define LOOP_CONFIGURE 0x4C0A
+ #endif
+ 
++#ifndef LO_FLAGS_DIRECT_IO
++#define LO_FLAGS_DIRECT_IO 16
++#define LOOP_SET_DIRECT_IO 0x4C08
++#endif
++
+ #ifndef LOOP_SET_STATUS_SETTABLE_FLAGS
+-#define LOOP_SET_STATUS_SETTABLE_FLAGS (LO_FLAGS_AUTOCLEAR | LO_FLAGS_PARTSCAN)
++#define LOOP_SET_STATUS_SETTABLE_FLAGS (LO_FLAGS_AUTOCLEAR | LO_FLAGS_PARTSCAN | LO_FLAGS_DIRECT_IO)
+ #endif
+-- 
+2.34.1
+
